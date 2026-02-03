@@ -10,6 +10,7 @@ Private, company-only AI chat with admin-managed context, access control, and us
 - next-intl (en + pl)
 - Neon Postgres (planned)
 - Cloudflare R2 (planned)
+- OpenAI embeddings (planned)
 
 ## Scripts
 

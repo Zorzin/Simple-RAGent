@@ -9,6 +9,7 @@ import {
   timestamp,
   uuid,
   uniqueIndex,
+  customType,
 } from "drizzle-orm/pg-core";
 
 export const memberRole = pgEnum("member_role", ["admin", "member"]);
@@ -127,6 +128,48 @@ export const files = pgTable(
   }),
 );
 
+const VECTOR_DIMENSION = 1536;
+
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return `vector(${VECTOR_DIMENSION})`;
+  },
+  toDriver(value) {
+    return `[${value.join(",")}]`;
+  },
+  fromDriver(value) {
+    if (Array.isArray(value)) {
+      return value as number[];
+    }
+    if (typeof value === "string") {
+      return value
+        .replace(/[\\[\\]\\s]/g, "")
+        .split(",")
+        .filter(Boolean)
+        .map((part) => Number(part));
+    }
+    return [] as number[];
+  },
+});
+
+export const fileChunks = pgTable(
+  "file_chunks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    fileId: uuid("file_id")
+      .references(() => files.id)
+      .notNull(),
+    chunkIndex: integer("chunk_index").notNull(),
+    content: text("content").notNull(),
+    tokenCount: integer("token_count").notNull(),
+    embedding: vector("embedding").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    fileIdx: index("file_chunks_file_idx").on(table.fileId),
+  }),
+);
+
 export const chatFiles = pgTable(
   "chat_files",
   {
@@ -223,9 +266,11 @@ export const messages = pgTable(
     memberId: uuid("member_id").references(() => members.id),
     role: text("role").notNull(),
     content: text("content").notNull(),
+    tokenCount: integer("token_count").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     chatIdx: index("messages_chat_idx").on(table.chatId),
+    memberIdx: index("messages_member_idx").on(table.memberId),
   }),
 );

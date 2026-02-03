@@ -12,12 +12,14 @@ import {
   chatGroups,
   chatLlmConnectors,
   chats,
+  fileChunks,
   files,
   groups,
   llmConnectors,
   tokenLimits,
 } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
+import { chunkText, embedTexts, estimateTokens } from "@/lib/embeddings";
 import { deleteFromR2, uploadToR2 } from "@/lib/storage/r2";
 
 const chatSchema = z.object({
@@ -86,6 +88,16 @@ const chatConnectorSchema = z.object({
 });
 
 const inviteSchema = z.object({
+  emailAddress: z.string().email(),
+  role: z.enum(["org:admin", "org:member"]),
+});
+
+const revokeInviteSchema = z.object({
+  invitationId: z.string().min(1),
+});
+
+const resendInviteSchema = z.object({
+  invitationId: z.string().min(1),
   emailAddress: z.string().email(),
   role: z.enum(["org:admin", "org:member"]),
 });
@@ -293,15 +305,34 @@ export async function uploadFile(formData: FormData) {
     contentType: file.type,
   });
 
-  await db.insert(files).values({
-    organizationId: organization.id,
-    name: file.name,
-    storageProvider: "r2",
-    storageKey: key,
-    mimeType: file.type,
-    size: file.size,
-    metadata: null,
-  });
+  const [storedFile] = await db
+    .insert(files)
+    .values({
+      organizationId: organization.id,
+      name: file.name,
+      storageProvider: "r2",
+      storageKey: key,
+      mimeType: file.type,
+      size: file.size,
+      metadata: null,
+    })
+    .returning();
+
+  if (file.type.startsWith("text/")) {
+    const text = await file.text();
+    const chunks = chunkText(text);
+    if (chunks.length) {
+      const embeddings = await embedTexts(chunks);
+      const values = chunks.map((content, index) => ({
+        fileId: storedFile.id,
+        chunkIndex: index,
+        content,
+        tokenCount: estimateTokens(content),
+        embedding: embeddings[index],
+      }));
+      await db.insert(fileChunks).values(values);
+    }
+  }
 
   revalidatePath("/admin/files");
 }
@@ -324,6 +355,7 @@ export async function deleteFile(formData: FormData) {
   if (file?.storageKey) {
     await deleteFromR2(file.storageKey);
   }
+  await db.delete(fileChunks).where(eq(fileChunks.fileId, id));
   await db.delete(files).where(eq(files.id, id));
   revalidatePath("/admin/files");
 }
@@ -423,6 +455,59 @@ export async function inviteMember(formData: FormData) {
   const data = inviteSchema.parse({
     emailAddress: formData.get("emailAddress"),
     role: formData.get("role"),
+  });
+
+  await clerkClient.organizations.createOrganizationInvitation({
+    organizationId: orgId,
+    inviterUserId: userId,
+    emailAddress: data.emailAddress,
+    role: data.role,
+  });
+
+  revalidatePath("/admin/members");
+}
+
+export async function revokeInvitation(formData: FormData) {
+  const { userId, orgId } = await auth();
+  if (!userId || !orgId) {
+    throw new Error("Organization required");
+  }
+  if (!process.env.CLERK_SECRET_KEY) {
+    throw new Error("CLERK_SECRET_KEY is not configured");
+  }
+
+  const data = revokeInviteSchema.parse({
+    invitationId: formData.get("invitationId"),
+  });
+
+  await clerkClient.organizations.revokeOrganizationInvitation({
+    organizationId: orgId,
+    invitationId: data.invitationId,
+    requestingUserId: userId,
+  });
+
+  revalidatePath("/admin/members");
+}
+
+export async function resendInvitation(formData: FormData) {
+  const { userId, orgId } = await auth();
+  if (!userId || !orgId) {
+    throw new Error("Organization required");
+  }
+  if (!process.env.CLERK_SECRET_KEY) {
+    throw new Error("CLERK_SECRET_KEY is not configured");
+  }
+
+  const data = resendInviteSchema.parse({
+    invitationId: formData.get("invitationId"),
+    emailAddress: formData.get("emailAddress"),
+    role: formData.get("role"),
+  });
+
+  await clerkClient.organizations.revokeOrganizationInvitation({
+    organizationId: orgId,
+    invitationId: data.invitationId,
+    requestingUserId: userId,
   });
 
   await clerkClient.organizations.createOrganizationInvitation({

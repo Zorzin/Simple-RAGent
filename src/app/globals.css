@@ -123,3 +123,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  [data-admin-table] tbody tr {
+    @apply transition-colors;
+  }
+
+  [data-admin-table] tbody tr:nth-child(even) {
+    @apply bg-zinc-50/40;
+  }
+
+  [data-admin-table] tbody tr:hover {
+    @apply bg-zinc-100/70;
+  }
+}

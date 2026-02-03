@@ -41,7 +41,7 @@ export default async function NewConnectorPage({ params }: Props) {
       <Card className="space-y-4 p-6">
         <form action={createConnector} className="space-y-3">
           <Input name="name" placeholder="Connector name" required />
-          <Input name="provider" placeholder="Provider (claude, openai, copilot)" required />
+          <Input name="provider" placeholder="Provider (anthropic, openai, copilot)" required />
           <Input name="model" placeholder="Model (optional)" />
           <Input name="apiKey" placeholder="API key (optional)" />
           <Button type="submit">Add connector</Button>

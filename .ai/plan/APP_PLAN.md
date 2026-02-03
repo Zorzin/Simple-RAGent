@@ -22,22 +22,26 @@ Private company AI chat with admin-managed scope, connectors, and usage limits. 
 - next-intl configured with locales `en` and `pl`
 - Clerk integrated (provider + sign-in/up routes + protected routes)
 - Drizzle + Neon setup with initial schema
-- Admin panel skeleton with server actions:
-  - Create chats, groups, LLM connectors
-  - Set token limits (day/week/month)
+- Admin panel with standard list/create/edit pages and full-width layout:
+  - Chats, groups, connectors, files, limits, members, access links
+  - Pagination, sorting, confirm deletes
 - Upload files to Cloudflare R2 (private objects)
   - Link chats to files / groups / connectors
+  - Text files are chunked + embedded
 - Member workspace shows chats for org
 - Repo initialized + first commit
 - Root `/` redirect added to avoid 404
-- Admin UI improved to avoid manual ID entry (select inputs)
+- Admin UI avoids manual ID entry (select inputs)
 - Clerk org create route added
+- Streaming chat responses for Claude + OpenAI
+- Vector search with pgvector + OpenAI embeddings
+- Token usage tracking + enforcement (day/week/month)
 
 ## Work In Progress
 
-- Fix 404 report (ensure app is run from `simple-ragent/`, verify routing/middleware)
 - Wire Clerk invites (organization or invitation API)
-- Shift org ownership to Clerk Organizations (auth + roles)
+- Copilot connector integration (GitHub Copilot API style)
+- Admin UX polish as issues are found
 
 ## Major Milestones (Planned)
 
@@ -52,9 +56,9 @@ Private company AI chat with admin-managed scope, connectors, and usage limits. 
    - Role-based access enforcement
 
 3. **File Ingestion + Retrieval**
-   - File upload pipeline (Vercel Blob)
-   - Chunking + embedding
-   - Vector search (likely pgvector)
+   - File upload pipeline (Cloudflare R2)
+   - Chunking + embedding (OpenAI embeddings)
+   - Vector search (pgvector)
    - Tools/skills mechanism to fetch relevant files in chat
 
 4. **LLM Connectors**
@@ -87,6 +91,5 @@ Private company AI chat with admin-managed scope, connectors, and usage limits. 
 ## Next Steps (Immediate)
 
 - Implement Clerk invites
-- Decide Copilot product
-- Add embeddings + pgvector
-- Build chat streaming for Claude
+- Implement token usage tracking + enforcement
+- Integrate Copilot connector

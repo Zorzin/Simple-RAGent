@@ -10,7 +10,7 @@ import { requireAdmin } from "@/lib/admin";
 import { fetchOrgInvitations, fetchOrgMemberships } from "@/lib/clerk-org";
 import { buildPageHref, getPageParams, getTotalPages } from "@/lib/pagination";
 
-import { deleteMemberRole } from "../actions";
+import { deleteMemberRole, resendInvitation, revokeInvitation } from "../actions";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -69,7 +69,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
           <h3 className="text-sm font-semibold text-zinc-900">Members list</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+          <table data-admin-table className="w-full border-collapse text-sm">
             <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold">Member</th>
@@ -155,7 +155,29 @@ export default async function MembersPage({ params, searchParams }: Props) {
                   <div className="font-medium text-zinc-900">{invite.emailAddress}</div>
                   <div className="text-xs text-zinc-500">{invite.role}</div>
                 </div>
-                <div className="text-xs text-zinc-400">Pending</div>
+                <div className="flex items-center gap-3 text-xs text-zinc-400">
+                  <span>Pending</span>
+                  <form action={resendInvitation}>
+                    <input type="hidden" name="invitationId" value={invite.id} />
+                    <input type="hidden" name="emailAddress" value={invite.emailAddress} />
+                    <input type="hidden" name="role" value={invite.role} />
+                    <ConfirmButton
+                      className="text-xs font-medium text-zinc-600 hover:text-zinc-900"
+                      confirmText="Resend this invite?"
+                    >
+                      Resend
+                    </ConfirmButton>
+                  </form>
+                  <form action={revokeInvitation}>
+                    <input type="hidden" name="invitationId" value={invite.id} />
+                    <ConfirmButton
+                      className="text-xs font-medium text-red-500 hover:text-red-600"
+                      confirmText="Revoke this invite?"
+                    >
+                      Revoke
+                    </ConfirmButton>
+                  </form>
+                </div>
               </div>
             ))
           )}

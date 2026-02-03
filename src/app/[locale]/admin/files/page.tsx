@@ -84,7 +84,7 @@ export default async function FilesPage({ params, searchParams }: Props) {
           <h3 className="text-sm font-semibold text-zinc-900">Files list</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+          <table data-admin-table className="w-full border-collapse text-sm">
             <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold">

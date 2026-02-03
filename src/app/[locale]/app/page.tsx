@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
+import Link from "next/link";
+
 import { Card } from "@/components/ui/card";
 import { getDb } from "@/db";
 import { chats } from "@/db/schema";
@@ -10,9 +12,9 @@ import { getOrCreateMember } from "@/lib/organization";
 
 export default async function AppHome({ params }: { params: Promise<{ locale: string }> }) {
   const t = await getTranslations("home");
+  const { locale } = await params;
   const { orgId } = await auth();
   if (!orgId) {
-    const { locale } = await params;
     redirect(`/${locale}/create-organization`);
   }
   const { organization } = await getOrCreateMember();
@@ -30,10 +32,12 @@ export default async function AppHome({ params }: { params: Promise<{ locale: st
 
       <div className="grid gap-4 md:grid-cols-2">
         {chatRows.map((chat) => (
-          <Card key={chat.id} className="space-y-2 p-4">
-            <div className="text-lg font-semibold text-zinc-900">{chat.name}</div>
-            <div className="text-sm text-zinc-600">{chat.description}</div>
-          </Card>
+          <Link key={chat.id} href={`/${locale}/app/chats/${chat.id}`}>
+            <Card className="space-y-2 p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="text-lg font-semibold text-zinc-900">{chat.name}</div>
+              <div className="text-sm text-zinc-600">{chat.description}</div>
+            </Card>
+          </Link>
         ))}
         {chatRows.length === 0 ? (
           <Card className="p-4 text-sm text-zinc-600">

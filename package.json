@@ -12,6 +12,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.72.1",
     "@aws-sdk/client-s3": "^3.981.0",
     "@aws-sdk/s3-request-presigner": "^3.981.0",
     "@clerk/nextjs": "^6.37.1",
@@ -22,6 +23,7 @@
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "next-intl": "^4.8.2",
+    "openai": "^6.17.0",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
