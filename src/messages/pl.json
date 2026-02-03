@@ -1,0 +1,14 @@
+{
+  "home": {
+    "title": "Firmowe AI, prywatne z założenia",
+    "subtitle": "Rozmawiaj z wiedzą firmy, projektami i plikami. Administratorzy kontrolują dostęp, limity i modele.",
+    "ctaPrimary": "Otwórz workspace",
+    "ctaSecondary": "Panel admina",
+    "sectionTitle": "Co dostarczy ta aplikacja",
+    "feature1": "Prywatne czaty ograniczone do plików i projektów",
+    "feature2": "Grupy i zaproszenia członków z rolami",
+    "feature3": "Konektory LLM per czat z obsługą API key",
+    "feature4": "Limity tokenów: dzień, tydzień, miesiąc",
+    "comingSoon": "Fundament gotowy. Kolejne kroki to logika i integracje."
+  }
+}

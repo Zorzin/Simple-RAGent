@@ -1,0 +1,14 @@
+{
+  "home": {
+    "title": "Company AI, private by design",
+    "subtitle": "Chat with your org's knowledge, projects, and files. Admins control access, limits, and models.",
+    "ctaPrimary": "Open Workspace",
+    "ctaSecondary": "Admin Panel",
+    "sectionTitle": "What this app will deliver",
+    "feature1": "Private chats scoped to files and projects",
+    "feature2": "Groups and member invites with role-based access",
+    "feature3": "LLM connectors per chat with API key support",
+    "feature4": "Token limits by day, week, month",
+    "comingSoon": "Scaffolded foundation. Core flows and integrations are next."
+  }
+}
