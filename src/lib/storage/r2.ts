@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const bucket = process.env.R2_BUCKET_NAME;
 const accountId = process.env.R2_ACCOUNT_ID;
@@ -36,4 +36,13 @@ export async function uploadToR2(params: {
     key: params.key,
     bucket,
   };
+}
+
+export async function deleteFromR2(key: string) {
+  const command = new DeleteObjectCommand({
+    Bucket: bucket,
+    Key: key,
+  });
+
+  await client.send(command);
 }

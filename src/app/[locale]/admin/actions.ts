@@ -4,10 +4,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { uploadToR2 } from "@/lib/storage/r2";
+import { and, eq } from "drizzle-orm";
 
 import { getDb } from "@/db";
-
 import {
   chatFiles,
   chatGroups,
@@ -19,13 +18,25 @@ import {
   tokenLimits,
 } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
+import { deleteFromR2, uploadToR2 } from "@/lib/storage/r2";
 
 const chatSchema = z.object({
   name: z.string().min(2, "Name is too short"),
   description: z.string().optional(),
 });
 
+const chatUpdateSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(2, "Name is too short"),
+  description: z.string().optional(),
+});
+
 const groupSchema = z.object({
+  name: z.string().min(2, "Name is too short"),
+});
+
+const groupUpdateSchema = z.object({
+  id: z.string().uuid(),
   name: z.string().min(2, "Name is too short"),
 });
 
@@ -36,10 +47,27 @@ const connectorSchema = z.object({
   apiKey: z.string().optional(),
 });
 
+const connectorUpdateSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(2, "Name is too short"),
+  provider: z.enum(["openai", "anthropic", "mistral", "azure_openai", "copilot", "custom"]),
+  model: z.string().optional(),
+});
+
 const tokenLimitSchema = z.object({
   clerkUserId: z.string(),
   interval: z.enum(["day", "week", "month"]),
   limitTokens: z.coerce.number().int().positive(),
+});
+
+const tokenLimitUpdateSchema = z.object({
+  id: z.string().uuid(),
+  limitTokens: z.coerce.number().int().positive(),
+});
+
+const fileRenameSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1, "Name is required"),
 });
 
 const chatFileSchema = z.object({
@@ -57,6 +85,16 @@ const chatConnectorSchema = z.object({
   connectorId: z.string().uuid(),
 });
 
+const inviteSchema = z.object({
+  emailAddress: z.string().email(),
+  role: z.enum(["org:admin", "org:member"]),
+});
+
+const memberRoleSchema = z.object({
+  membershipId: z.string(),
+  role: z.enum(["org:admin", "org:member"]),
+});
+
 export async function createChat(formData: FormData) {
   const { organization } = await requireAdmin();
   const data = chatSchema.parse({
@@ -71,7 +109,30 @@ export async function createChat(formData: FormData) {
     description: data.description,
   });
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/chats");
+}
+
+export async function updateChat(formData: FormData) {
+  const data = chatUpdateSchema.parse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+    description: formData.get("description") || undefined,
+  });
+
+  const db = getDb();
+  await db
+    .update(chats)
+    .set({ name: data.name, description: data.description })
+    .where(eq(chats.id, data.id));
+
+  revalidatePath("/admin/chats");
+}
+
+export async function deleteChat(formData: FormData) {
+  const id = z.string().uuid().parse(formData.get("id"));
+  const db = getDb();
+  await db.delete(chats).where(eq(chats.id, id));
+  revalidatePath("/admin/chats");
 }
 
 export async function createGroup(formData: FormData) {
@@ -86,7 +147,25 @@ export async function createGroup(formData: FormData) {
     name: data.name,
   });
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/groups");
+}
+
+export async function updateGroup(formData: FormData) {
+  const data = groupUpdateSchema.parse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+  });
+
+  const db = getDb();
+  await db.update(groups).set({ name: data.name }).where(eq(groups.id, data.id));
+  revalidatePath("/admin/groups");
+}
+
+export async function deleteGroup(formData: FormData) {
+  const id = z.string().uuid().parse(formData.get("id"));
+  const db = getDb();
+  await db.delete(groups).where(eq(groups.id, id));
+  revalidatePath("/admin/groups");
 }
 
 export async function createConnector(formData: FormData) {
@@ -107,7 +186,31 @@ export async function createConnector(formData: FormData) {
     apiKeyEncrypted: data.apiKey,
   });
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/connectors");
+}
+
+export async function updateConnector(formData: FormData) {
+  const data = connectorUpdateSchema.parse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+    provider: formData.get("provider"),
+    model: formData.get("model") || undefined,
+  });
+
+  const db = getDb();
+  await db
+    .update(llmConnectors)
+    .set({ name: data.name, provider: data.provider, model: data.model })
+    .where(eq(llmConnectors.id, data.id));
+
+  revalidatePath("/admin/connectors");
+}
+
+export async function deleteConnector(formData: FormData) {
+  const id = z.string().uuid().parse(formData.get("id"));
+  const db = getDb();
+  await db.delete(llmConnectors).where(eq(llmConnectors.id, id));
+  revalidatePath("/admin/connectors");
 }
 
 export async function setTokenLimit(formData: FormData) {
@@ -122,14 +225,56 @@ export async function setTokenLimit(formData: FormData) {
   });
 
   const db = getDb();
-  await db.insert(tokenLimits).values({
-    organizationId: (await requireAdmin()).organization.id,
-    clerkUserId: data.clerkUserId,
-    interval: data.interval,
-    limitTokens: data.limitTokens,
+  const { organization } = await requireAdmin();
+  const [existing] = await db
+    .select()
+    .from(tokenLimits)
+    .where(
+      and(
+        eq(tokenLimits.organizationId, organization.id),
+        eq(tokenLimits.clerkUserId, data.clerkUserId),
+        eq(tokenLimits.interval, data.interval),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(tokenLimits)
+      .set({ limitTokens: data.limitTokens })
+      .where(eq(tokenLimits.id, existing.id));
+  } else {
+    await db.insert(tokenLimits).values({
+      organizationId: organization.id,
+      clerkUserId: data.clerkUserId,
+      interval: data.interval,
+      limitTokens: data.limitTokens,
+    });
+  }
+
+  revalidatePath("/admin/limits");
+}
+
+export async function updateTokenLimit(formData: FormData) {
+  const data = tokenLimitUpdateSchema.parse({
+    id: formData.get("id"),
+    limitTokens: formData.get("limitTokens"),
   });
 
-  revalidatePath("/admin");
+  const db = getDb();
+  await db
+    .update(tokenLimits)
+    .set({ limitTokens: data.limitTokens })
+    .where(eq(tokenLimits.id, data.id));
+
+  revalidatePath("/admin/limits");
+}
+
+export async function deleteTokenLimit(formData: FormData) {
+  const id = z.string().uuid().parse(formData.get("id"));
+  const db = getDb();
+  await db.delete(tokenLimits).where(eq(tokenLimits.id, id));
+  revalidatePath("/admin/limits");
 }
 
 export async function uploadFile(formData: FormData) {
@@ -158,7 +303,29 @@ export async function uploadFile(formData: FormData) {
     metadata: null,
   });
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/files");
+}
+
+export async function renameFile(formData: FormData) {
+  const data = fileRenameSchema.parse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+  });
+
+  const db = getDb();
+  await db.update(files).set({ name: data.name }).where(eq(files.id, data.id));
+  revalidatePath("/admin/files");
+}
+
+export async function deleteFile(formData: FormData) {
+  const id = z.string().uuid().parse(formData.get("id"));
+  const db = getDb();
+  const [file] = await db.select().from(files).where(eq(files.id, id)).limit(1);
+  if (file?.storageKey) {
+    await deleteFromR2(file.storageKey);
+  }
+  await db.delete(files).where(eq(files.id, id));
+  revalidatePath("/admin/files");
 }
 
 export async function linkChatToFile(formData: FormData) {
@@ -170,7 +337,21 @@ export async function linkChatToFile(formData: FormData) {
   const db = getDb();
   await db.insert(chatFiles).values(data);
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/access");
+}
+
+export async function unlinkChatFromFile(formData: FormData) {
+  const data = chatFileSchema.parse({
+    chatId: formData.get("chatId"),
+    fileId: formData.get("fileId"),
+  });
+
+  const db = getDb();
+  await db
+    .delete(chatFiles)
+    .where(and(eq(chatFiles.chatId, data.chatId), eq(chatFiles.fileId, data.fileId)));
+
+  revalidatePath("/admin/access");
 }
 
 export async function linkChatToGroup(formData: FormData) {
@@ -182,7 +363,21 @@ export async function linkChatToGroup(formData: FormData) {
   const db = getDb();
   await db.insert(chatGroups).values(data);
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/access");
+}
+
+export async function unlinkChatFromGroup(formData: FormData) {
+  const data = chatGroupSchema.parse({
+    chatId: formData.get("chatId"),
+    groupId: formData.get("groupId"),
+  });
+
+  const db = getDb();
+  await db
+    .delete(chatGroups)
+    .where(and(eq(chatGroups.chatId, data.chatId), eq(chatGroups.groupId, data.groupId)));
+
+  revalidatePath("/admin/access");
 }
 
 export async function linkChatToConnector(formData: FormData) {
@@ -194,13 +389,27 @@ export async function linkChatToConnector(formData: FormData) {
   const db = getDb();
   await db.insert(chatLlmConnectors).values(data);
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/access");
 }
 
-const inviteSchema = z.object({
-  emailAddress: z.string().email(),
-  role: z.enum(["org:admin", "org:member"]),
-});
+export async function unlinkChatFromConnector(formData: FormData) {
+  const data = chatConnectorSchema.parse({
+    chatId: formData.get("chatId"),
+    connectorId: formData.get("connectorId"),
+  });
+
+  const db = getDb();
+  await db
+    .delete(chatLlmConnectors)
+    .where(
+      and(
+        eq(chatLlmConnectors.chatId, data.chatId),
+        eq(chatLlmConnectors.connectorId, data.connectorId),
+      ),
+    );
+
+  revalidatePath("/admin/access");
+}
 
 export async function inviteMember(formData: FormData) {
   const { userId, orgId } = await auth();
@@ -216,13 +425,46 @@ export async function inviteMember(formData: FormData) {
     role: formData.get("role"),
   });
 
-  const client = await clerkClient();
-  await client.organizations.createOrganizationInvitation({
+  await clerkClient.organizations.createOrganizationInvitation({
     organizationId: orgId,
     inviterUserId: userId,
     emailAddress: data.emailAddress,
     role: data.role,
   });
 
-  revalidatePath("/admin");
+  revalidatePath("/admin/members");
+}
+
+export async function updateMemberRole(formData: FormData) {
+  const { orgId } = await auth();
+  if (!orgId) {
+    throw new Error("Organization required");
+  }
+  const data = memberRoleSchema.parse({
+    membershipId: formData.get("membershipId"),
+    role: formData.get("role"),
+  });
+
+  await clerkClient.organizations.updateOrganizationMembership({
+    organizationId: orgId,
+    membershipId: data.membershipId,
+    role: data.role,
+  });
+
+  revalidatePath("/admin/members");
+}
+
+export async function deleteMemberRole(formData: FormData) {
+  const { orgId } = await auth();
+  if (!orgId) {
+    throw new Error("Organization required");
+  }
+  const membershipId = z.string().parse(formData.get("membershipId"));
+
+  await clerkClient.organizations.deleteOrganizationMembership({
+    organizationId: orgId,
+    membershipId,
+  });
+
+  revalidatePath("/admin/members");
 }

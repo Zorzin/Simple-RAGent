@@ -1,4 +1,3 @@
-import { OrganizationSwitcher } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { getTranslations } from "next-intl/server";
@@ -22,14 +21,11 @@ export default async function AppHome({ params }: { params: Promise<{ locale: st
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-12">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold text-zinc-900">{t("ctaPrimary")}</h1>
-          <p className="text-zinc-600">
-            This is the member workspace. Chats will be scoped to files, projects, and group access.
-          </p>
-        </div>
-        <OrganizationSwitcher />
+      <header className="space-y-2">
+        <h1 className="text-3xl font-semibold text-zinc-900">{t("ctaPrimary")}</h1>
+        <p className="text-zinc-600">
+          This is the member workspace. Chats will be scoped to files, projects, and group access.
+        </p>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">
