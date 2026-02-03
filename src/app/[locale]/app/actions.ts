@@ -70,16 +70,31 @@ export async function sendMessage(formData: FormData) {
   const connector =
     availableConnectors.find((row) => row.provider === "anthropic") ||
     availableConnectors.find((row) => row.provider === "openai") ||
+    availableConnectors.find((row) => row.provider === "copilot") ||
     availableConnectors[0];
 
   const systemPrompt = `You are a company assistant. Use the provided context when relevant. If context is missing, answer normally and mention uncertainty.\n\nContext:\n${context || "No relevant context."}`;
   const maxOutputTokens = 800;
   const promptTokens = estimateTokens(`${systemPrompt}\n\n${data.content}`);
 
+  const resolvedApiKey =
+    connector?.provider === "anthropic"
+      ? (connector.apiKey ?? process.env.ANTHROPIC_API_KEY)
+      : connector?.provider === "openai"
+        ? (connector.apiKey ?? process.env.OPENAI_API_KEY)
+        : connector?.provider === "copilot"
+          ? (connector.apiKey ?? process.env.GITHUB_TOKEN)
+          : (connector?.apiKey ?? null);
+
+  if (connector?.provider && !resolvedApiKey) {
+    throw new Error("Selected connector is missing an API key.");
+  }
+
   const limitStatus = await getTokenLimitStatus({
     organizationId: organization.id,
     clerkUserId: member.clerkUserId,
     memberId: member.id,
+    chatId: chat.id,
     tokensToConsume: promptTokens + maxOutputTokens,
   });
 

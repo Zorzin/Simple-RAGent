@@ -4,7 +4,10 @@ import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getDb } from "@/db";
+import { members } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
+import { eq } from "drizzle-orm";
 
 import { createGroup } from "../../actions";
 
@@ -14,7 +17,12 @@ type Props = {
 
 export default async function NewGroupPage({ params }: Props) {
   const { locale } = await params;
-  await requireAdmin();
+  const { organization } = await requireAdmin();
+  const db = getDb();
+  const memberRows = await db
+    .select()
+    .from(members)
+    .where(eq(members.organizationId, organization.id));
 
   return (
     <div className="space-y-6">
@@ -39,8 +47,25 @@ export default async function NewGroupPage({ params }: Props) {
       </div>
 
       <Card className="space-y-4 p-6">
-        <form action={createGroup} className="space-y-3">
+        <form action={createGroup} className="space-y-4">
           <Input name="name" placeholder="Group name" required />
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-zinc-500">Assign members</div>
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
+              {memberRows.length === 0 ? (
+                <div className="text-zinc-500">No members yet.</div>
+              ) : (
+                memberRows.map((member) => (
+                  <label key={member.id} className="flex items-center gap-2 py-1">
+                    <input type="checkbox" name="memberIds" value={member.id} />
+                    <span className="text-zinc-700">
+                      {member.displayName ?? member.email ?? member.clerkUserId}
+                    </span>
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
           <Button type="submit">Create group</Button>
         </form>
       </Card>

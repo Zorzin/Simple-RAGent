@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import ConnectorFields from "@/components/admin/ConnectorFields";
 import { getDb } from "@/db";
 import { llmConnectors } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
@@ -55,9 +55,11 @@ export default async function EditConnectorPage({ params }: Props) {
       <Card className="space-y-4 p-6">
         <form action={updateConnector} className="space-y-3">
           <input type="hidden" name="id" value={connector.id} />
-          <Input name="name" defaultValue={connector.name} required />
-          <Input name="provider" defaultValue={connector.provider} required />
-          <Input name="model" defaultValue={connector.model ?? ""} />
+          <ConnectorFields
+            initialName={connector.name}
+            initialProvider={connector.provider}
+            initialModel={connector.model ?? ""}
+          />
           <div className="flex items-center gap-2">
             <Button type="submit">Save changes</Button>
             <Button formAction={deleteConnector} type="submit" variant="destructive">

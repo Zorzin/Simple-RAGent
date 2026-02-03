@@ -2,8 +2,7 @@ import Link from "next/link";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import InviteMemberForm from "@/components/admin/InviteMemberForm";
 import { requireAdmin } from "@/lib/admin";
 
 import { inviteMember } from "../../actions";
@@ -38,20 +37,7 @@ export default async function InviteMemberPage({ params }: Props) {
         </div>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <form action={inviteMember} className="space-y-3">
-          <Input name="emailAddress" placeholder="Email address" required />
-          <select
-            name="role"
-            className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
-            required
-          >
-            <option value="org:member">Member</option>
-            <option value="org:admin">Admin</option>
-          </select>
-          <Button type="submit">Send invite</Button>
-        </form>
-      </Card>
+      <InviteMemberForm locale={locale} action={inviteMember} />
     </div>
   );
 }

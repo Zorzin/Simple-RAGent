@@ -239,6 +239,22 @@ export const chatLlmConnectors = pgTable(
   }),
 );
 
+export const chatTokenLimits = pgTable(
+  "chat_token_limits",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    chatId: uuid("chat_id")
+      .references(() => chats.id)
+      .notNull(),
+    interval: tokenInterval("interval").notNull(),
+    limitTokens: integer("limit_tokens").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    chatIdx: index("chat_token_limits_chat_idx").on(table.chatId),
+  }),
+);
+
 export const tokenLimits = pgTable(
   "token_limits",
   {

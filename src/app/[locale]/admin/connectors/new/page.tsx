@@ -3,7 +3,7 @@ import Link from "next/link";
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import ConnectorFields from "@/components/admin/ConnectorFields";
 import { requireAdmin } from "@/lib/admin";
 
 import { createConnector } from "../../actions";
@@ -40,10 +40,7 @@ export default async function NewConnectorPage({ params }: Props) {
 
       <Card className="space-y-4 p-6">
         <form action={createConnector} className="space-y-3">
-          <Input name="name" placeholder="Connector name" required />
-          <Input name="provider" placeholder="Provider (anthropic, openai, copilot)" required />
-          <Input name="model" placeholder="Model (optional)" />
-          <Input name="apiKey" placeholder="API key (optional)" />
+          <ConnectorFields />
           <Button type="submit">Add connector</Button>
         </form>
       </Card>

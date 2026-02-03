@@ -8,7 +8,16 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getDb } from "@/db";
-import { chats } from "@/db/schema";
+import {
+  chatFiles,
+  chatGroups,
+  chatLlmConnectors,
+  chatTokenLimits,
+  chats,
+  files,
+  groups,
+  llmConnectors,
+} from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
 
 import { deleteChat, updateChat } from "../../../actions";
@@ -19,13 +28,39 @@ type Props = {
 
 export default async function EditChatPage({ params }: Props) {
   const { locale, chatId } = await params;
-  await requireAdmin();
+  const { organization } = await requireAdmin();
   const db = getDb();
   const [chat] = await db.select().from(chats).where(eq(chats.id, chatId)).limit(1);
 
   if (!chat) {
     notFound();
   }
+
+  const [groupRows, fileRows, connectorRows, linkedGroups, linkedFiles, linkedConnectors, limits] =
+    await Promise.all([
+      db.select().from(groups).where(eq(groups.organizationId, organization.id)),
+      db.select().from(files).where(eq(files.organizationId, organization.id)),
+      db.select().from(llmConnectors).where(eq(llmConnectors.organizationId, organization.id)),
+      db
+        .select({ groupId: chatGroups.groupId })
+        .from(chatGroups)
+        .where(eq(chatGroups.chatId, chat.id)),
+      db.select({ fileId: chatFiles.fileId }).from(chatFiles).where(eq(chatFiles.chatId, chat.id)),
+      db
+        .select({ connectorId: chatLlmConnectors.connectorId })
+        .from(chatLlmConnectors)
+        .where(eq(chatLlmConnectors.chatId, chat.id)),
+      db.select().from(chatTokenLimits).where(eq(chatTokenLimits.chatId, chat.id)),
+    ]);
+
+  const groupIds = new Set(linkedGroups.map((row) => row.groupId));
+  const fileIds = new Set(linkedFiles.map((row) => row.fileId));
+  const connectorId = linkedConnectors[0]?.connectorId ?? "";
+  const limitDay = limits.find((limit) => limit.interval === "day")?.limitTokens?.toString() ?? "";
+  const limitWeek =
+    limits.find((limit) => limit.interval === "week")?.limitTokens?.toString() ?? "";
+  const limitMonth =
+    limits.find((limit) => limit.interval === "month")?.limitTokens?.toString() ?? "";
 
   return (
     <div className="space-y-6">
@@ -50,10 +85,79 @@ export default async function EditChatPage({ params }: Props) {
       </div>
 
       <Card className="space-y-4 p-6">
-        <form action={updateChat} className="space-y-3">
+        <form action={updateChat} className="space-y-4">
           <input type="hidden" name="id" value={chat.id} />
           <Input name="name" defaultValue={chat.name} required />
           <Textarea name="description" defaultValue={chat.description ?? ""} />
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-zinc-500">Assign groups</div>
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
+              {groupRows.length === 0 ? (
+                <div className="text-zinc-500">No groups yet.</div>
+              ) : (
+                groupRows.map((group) => (
+                  <label key={group.id} className="flex items-center gap-2 py-1">
+                    <input
+                      type="checkbox"
+                      name="groupIds"
+                      value={group.id}
+                      defaultChecked={groupIds.has(group.id)}
+                    />
+                    <span className="text-zinc-700">{group.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-zinc-500">Assign files</div>
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
+              {fileRows.length === 0 ? (
+                <div className="text-zinc-500">No files yet.</div>
+              ) : (
+                fileRows.map((file) => (
+                  <label key={file.id} className="flex items-center gap-2 py-1">
+                    <input
+                      type="checkbox"
+                      name="fileIds"
+                      value={file.id}
+                      defaultChecked={fileIds.has(file.id)}
+                    />
+                    <span className="text-zinc-700">{file.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-zinc-500">Connector</div>
+            <select
+              name="connectorId"
+              className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
+              defaultValue={connectorId}
+            >
+              <option value="">No connector</option>
+              {connectorRows.map((connector) => (
+                <option key={connector.id} value={connector.id}>
+                  {connector.name} ({connector.provider})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-zinc-500">Daily limit</label>
+              <Input name="limitDay" type="number" min="0" defaultValue={limitDay} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-zinc-500">Weekly limit</label>
+              <Input name="limitWeek" type="number" min="0" defaultValue={limitWeek} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-zinc-500">Monthly limit</label>
+              <Input name="limitMonth" type="number" min="0" defaultValue={limitMonth} />
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <Button type="submit">Save changes</Button>
             <Button formAction={deleteChat} type="submit" variant="destructive">

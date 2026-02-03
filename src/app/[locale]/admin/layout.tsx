@@ -10,7 +10,6 @@ const navItems = [
   { href: "/admin/members", label: "Members" },
   { href: "/admin/connectors", label: "Connectors" },
   { href: "/admin/limits", label: "Limits" },
-  { href: "/admin/access", label: "Access" },
 ];
 
 type Props = {

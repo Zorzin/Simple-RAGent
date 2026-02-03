@@ -152,35 +152,37 @@ export default async function ChatsPage({ params, searchParams }: Props) {
             </tbody>
           </table>
         </div>
-        <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
-          <span>
-            Page {page} of {totalPages}
-          </span>
-          <div className="flex items-center gap-2">
-            <Link
-              className="rounded-md border border-zinc-200 px-2 py-1"
-              href={`/${locale}${buildPageHref("/admin/chats", {
-                page: page > 1 ? String(page - 1) : undefined,
-                q: query || undefined,
-                sort,
-                dir,
-              })}`}
-            >
-              Prev
-            </Link>
-            <Link
-              className="rounded-md border border-zinc-200 px-2 py-1"
-              href={`/${locale}${buildPageHref("/admin/chats", {
-                page: page < totalPages ? String(page + 1) : String(page),
-                q: query || undefined,
-                sort,
-                dir,
-              })}`}
-            >
-              Next
-            </Link>
+        {totalPages > 1 ? (
+          <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
+            <span>
+              Page {page} of {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <Link
+                className="rounded-md border border-zinc-200 px-2 py-1"
+                href={`/${locale}${buildPageHref("/admin/chats", {
+                  page: page > 1 ? String(page - 1) : undefined,
+                  q: query || undefined,
+                  sort,
+                  dir,
+                })}`}
+              >
+                Prev
+              </Link>
+              <Link
+                className="rounded-md border border-zinc-200 px-2 py-1"
+                href={`/${locale}${buildPageHref("/admin/chats", {
+                  page: page < totalPages ? String(page + 1) : String(page),
+                  q: query || undefined,
+                  sort,
+                  dir,
+                })}`}
+              >
+                Next
+              </Link>
+            </div>
           </div>
-        </div>
+        ) : null}
       </Card>
     </div>
   );

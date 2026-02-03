@@ -18,15 +18,30 @@ const client = new S3Client({
   },
 });
 
+async function normalizeBody(body: Blob | Buffer | Uint8Array) {
+  if (body instanceof Uint8Array) {
+    return body;
+  }
+  if (Buffer.isBuffer(body)) {
+    return body;
+  }
+  if (typeof (body as Blob).arrayBuffer === "function") {
+    const buffer = await (body as Blob).arrayBuffer();
+    return new Uint8Array(buffer);
+  }
+  return body;
+}
+
 export async function uploadToR2(params: {
   key: string;
   body: Blob | Buffer | Uint8Array;
   contentType?: string;
 }) {
+  const body = await normalizeBody(params.body);
   const command = new PutObjectCommand({
     Bucket: bucket,
     Key: params.key,
-    Body: params.body,
+    Body: body,
     ContentType: params.contentType,
   });
 

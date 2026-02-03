@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getDb } from "@/db";
-import { tokenLimits } from "@/db/schema";
+import { members, tokenLimits } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
 import { buildPageHref, getPageParams, getTotalPages } from "@/lib/pagination";
 import { getSortParams } from "@/lib/sorting";
@@ -34,7 +34,10 @@ export default async function LimitsPage({ params, searchParams }: Props) {
   const whereClause = query
     ? and(
         eq(tokenLimits.organizationId, organization.id),
-        ilike(tokenLimits.clerkUserId, `%${query}%`),
+        ilike(
+          sql`coalesce(${members.displayName}, ${members.email}, ${members.clerkUserId})`,
+          `%${query}%`,
+        ),
       )
     : eq(tokenLimits.organizationId, organization.id);
 
@@ -49,8 +52,17 @@ export default async function LimitsPage({ params, searchParams }: Props) {
 
   const [limitRows, totalRows] = await Promise.all([
     db
-      .select()
+      .select({
+        id: tokenLimits.id,
+        clerkUserId: tokenLimits.clerkUserId,
+        interval: tokenLimits.interval,
+        limitTokens: tokenLimits.limitTokens,
+        createdAt: tokenLimits.createdAt,
+        displayName: members.displayName,
+        email: members.email,
+      })
       .from(tokenLimits)
+      .leftJoin(members, eq(members.clerkUserId, tokenLimits.clerkUserId))
       .where(whereClause)
       .orderBy(orderByClause)
       .limit(limit)
@@ -58,6 +70,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
     db
       .select({ count: sql<number>`count(*)` })
       .from(tokenLimits)
+      .leftJoin(members, eq(members.clerkUserId, tokenLimits.clerkUserId))
       .where(whereClause),
   ]);
 
@@ -80,7 +93,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <form className="flex gap-2" method="get">
-              <Input name="q" defaultValue={query} placeholder="Search user id" />
+              <Input name="q" defaultValue={query} placeholder="Search member name" />
               <Button type="submit" variant="outline">
                 Search
               </Button>
@@ -135,7 +148,9 @@ export default async function LimitsPage({ params, searchParams }: Props) {
               ) : (
                 limitRows.map((limitRow) => (
                   <tr key={limitRow.id} className="border-t border-zinc-200">
-                    <td className="px-4 py-3 text-zinc-900">{limitRow.clerkUserId}</td>
+                    <td className="px-4 py-3 text-zinc-900">
+                      {limitRow.displayName ?? limitRow.email ?? limitRow.clerkUserId}
+                    </td>
                     <td className="px-4 py-3 text-zinc-500">{limitRow.interval}</td>
                     <td className="px-4 py-3 text-zinc-500">{limitRow.limitTokens}</td>
                     <td className="px-4 py-3 text-zinc-500">
@@ -166,35 +181,37 @@ export default async function LimitsPage({ params, searchParams }: Props) {
             </tbody>
           </table>
         </div>
-        <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
-          <span>
-            Page {page} of {totalPages}
-          </span>
-          <div className="flex items-center gap-2">
-            <Link
-              className="rounded-md border border-zinc-200 px-2 py-1"
-              href={`/${locale}${buildPageHref("/admin/limits", {
-                page: page > 1 ? String(page - 1) : undefined,
-                q: query || undefined,
-                sort,
-                dir,
-              })}`}
-            >
-              Prev
-            </Link>
-            <Link
-              className="rounded-md border border-zinc-200 px-2 py-1"
-              href={`/${locale}${buildPageHref("/admin/limits", {
-                page: page < totalPages ? String(page + 1) : String(page),
-                q: query || undefined,
-                sort,
-                dir,
-              })}`}
-            >
-              Next
-            </Link>
+        {totalPages > 1 ? (
+          <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
+            <span>
+              Page {page} of {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <Link
+                className="rounded-md border border-zinc-200 px-2 py-1"
+                href={`/${locale}${buildPageHref("/admin/limits", {
+                  page: page > 1 ? String(page - 1) : undefined,
+                  q: query || undefined,
+                  sort,
+                  dir,
+                })}`}
+              >
+                Prev
+              </Link>
+              <Link
+                className="rounded-md border border-zinc-200 px-2 py-1"
+                href={`/${locale}${buildPageHref("/admin/limits", {
+                  page: page < totalPages ? String(page + 1) : String(page),
+                  q: query || undefined,
+                  sort,
+                  dir,
+                })}`}
+              >
+                Next
+              </Link>
+            </div>
           </div>
-        </div>
+        ) : null}
       </Card>
     </div>
   );

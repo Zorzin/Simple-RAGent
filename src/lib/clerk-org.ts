@@ -50,12 +50,15 @@ export async function fetchOrgInvitations(orgId: string): Promise<InvitationItem
     return [];
   }
 
-  const response = await fetch(`https://api.clerk.com/v1/organizations/${orgId}/invitations`, {
-    headers: {
-      Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+  const response = await fetch(
+    `https://api.clerk.com/v1/organizations/${orgId}/invitations?status=pending`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+      },
+      cache: "no-store",
     },
-    cache: "no-store",
-  });
+  );
 
   if (!response.ok) {
     return [];
@@ -66,14 +69,17 @@ export async function fetchOrgInvitations(orgId: string): Promise<InvitationItem
       id: string;
       role: string;
       email_address?: string;
+      status?: string;
     }>;
   };
 
   return (
-    json.data?.map((item) => ({
-      id: item.id,
-      emailAddress: item.email_address ?? "",
-      role: item.role,
-    })) ?? []
+    json.data
+      ?.filter((item) => item.status === "pending" || !item.status)
+      .map((item) => ({
+        id: item.id,
+        emailAddress: item.email_address ?? "",
+        role: item.role,
+      })) ?? []
   );
 }

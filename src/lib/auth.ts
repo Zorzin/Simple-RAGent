@@ -1,5 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 
+export { auth };
+
 export type SessionUser = {
   userId: string;
   email: string | null;

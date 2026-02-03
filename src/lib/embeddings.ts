@@ -4,9 +4,11 @@ const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDINGS_MODEL || "text-embedding-3
 
 export const EMBEDDING_DIM = 1536;
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 export function chunkText(input: string, maxChars = 1500, overlap = 200) {
   const cleaned = input.replace(/\s+/g, " ").trim();
@@ -27,14 +29,15 @@ export function chunkText(input: string, maxChars = 1500, overlap = 200) {
 
 export async function embedTexts(texts: string[]) {
   if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY is not configured");
+    console.warn("OPENAI_API_KEY is not configured. Skipping embeddings.");
+    return [] as number[][];
   }
 
   if (texts.length === 0) {
     return [] as number[][];
   }
 
-  const response = await client.embeddings.create({
+  const response = await getClient().embeddings.create({
     model: EMBEDDING_MODEL,
     input: texts,
   });

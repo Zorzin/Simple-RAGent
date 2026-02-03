@@ -11,9 +11,11 @@ import {
   chatFiles,
   chatGroups,
   chatLlmConnectors,
+  chatTokenLimits,
   chats,
   fileChunks,
   files,
+  groupMembers,
   groups,
   llmConnectors,
   tokenLimits,
@@ -22,24 +24,55 @@ import { requireAdmin } from "@/lib/admin";
 import { chunkText, embedTexts, estimateTokens } from "@/lib/embeddings";
 import { deleteFromR2, uploadToR2 } from "@/lib/storage/r2";
 
+function getClerkErrorMessage(error: unknown) {
+  if (error && typeof error === "object" && "errors" in error) {
+    const err = error as { errors?: Array<{ longMessage?: string; message?: string }> };
+    const first = err.errors?.[0];
+    if (first?.longMessage) {
+      return first.longMessage;
+    }
+    if (first?.message) {
+      return first.message;
+    }
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Clerk request failed.";
+}
+
 const chatSchema = z.object({
   name: z.string().min(2, "Name is too short"),
   description: z.string().optional(),
+  groupIds: z.array(z.string().uuid()).optional(),
+  fileIds: z.array(z.string().uuid()).optional(),
+  connectorId: z.string().uuid().optional(),
+  limitDay: z.string().optional(),
+  limitWeek: z.string().optional(),
+  limitMonth: z.string().optional(),
 });
 
 const chatUpdateSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(2, "Name is too short"),
   description: z.string().optional(),
+  groupIds: z.array(z.string().uuid()).optional(),
+  fileIds: z.array(z.string().uuid()).optional(),
+  connectorId: z.string().uuid().optional(),
+  limitDay: z.string().optional(),
+  limitWeek: z.string().optional(),
+  limitMonth: z.string().optional(),
 });
 
 const groupSchema = z.object({
   name: z.string().min(2, "Name is too short"),
+  memberIds: z.array(z.string().uuid()).optional(),
 });
 
 const groupUpdateSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(2, "Name is too short"),
+  memberIds: z.array(z.string().uuid()).optional(),
 });
 
 const connectorSchema = z.object({
@@ -54,6 +87,7 @@ const connectorUpdateSchema = z.object({
   name: z.string().min(2, "Name is too short"),
   provider: z.enum(["openai", "anthropic", "mistral", "azure_openai", "copilot", "custom"]),
   model: z.string().optional(),
+  apiKey: z.string().optional(),
 });
 
 const tokenLimitSchema = z.object({
@@ -112,14 +146,72 @@ export async function createChat(formData: FormData) {
   const data = chatSchema.parse({
     name: formData.get("name"),
     description: formData.get("description") || undefined,
+    groupIds: formData.getAll("groupIds").filter((id): id is string => typeof id === "string"),
+    fileIds: formData.getAll("fileIds").filter((id): id is string => typeof id === "string"),
+    connectorId: formData.get("connectorId") || undefined,
+    limitDay: formData.get("limitDay")?.toString() || undefined,
+    limitWeek: formData.get("limitWeek")?.toString() || undefined,
+    limitMonth: formData.get("limitMonth")?.toString() || undefined,
   });
 
   const db = getDb();
-  await db.insert(chats).values({
-    organizationId: organization.id,
-    name: data.name,
-    description: data.description,
-  });
+  const [created] = await db
+    .insert(chats)
+    .values({
+      organizationId: organization.id,
+      name: data.name,
+      description: data.description,
+    })
+    .returning();
+
+  if (data.groupIds?.length) {
+    await db.insert(chatGroups).values(
+      data.groupIds.map((groupId) => ({
+        chatId: created.id,
+        groupId,
+      })),
+    );
+  }
+
+  if (data.fileIds?.length) {
+    await db.insert(chatFiles).values(
+      data.fileIds.map((fileId) => ({
+        chatId: created.id,
+        fileId,
+      })),
+    );
+  }
+
+  if (data.connectorId) {
+    await db.insert(chatLlmConnectors).values({
+      chatId: created.id,
+      connectorId: data.connectorId,
+    });
+  }
+
+  const limitRows = [
+    { interval: "day", value: data.limitDay },
+    { interval: "week", value: data.limitWeek },
+    { interval: "month", value: data.limitMonth },
+  ]
+    .map((entry) => ({
+      interval: entry.interval,
+      limitTokens: entry.value ? Number(entry.value) : null,
+    }))
+    .filter(
+      (entry): entry is { interval: "day" | "week" | "month"; limitTokens: number } =>
+        Number.isFinite(entry.limitTokens) && (entry.limitTokens ?? 0) > 0,
+    );
+
+  if (limitRows.length) {
+    await db.insert(chatTokenLimits).values(
+      limitRows.map((limit) => ({
+        chatId: created.id,
+        interval: limit.interval,
+        limitTokens: limit.limitTokens,
+      })),
+    );
+  }
 
   revalidatePath("/admin/chats");
 }
@@ -129,6 +221,12 @@ export async function updateChat(formData: FormData) {
     id: formData.get("id"),
     name: formData.get("name"),
     description: formData.get("description") || undefined,
+    groupIds: formData.getAll("groupIds").filter((id): id is string => typeof id === "string"),
+    fileIds: formData.getAll("fileIds").filter((id): id is string => typeof id === "string"),
+    connectorId: formData.get("connectorId") || undefined,
+    limitDay: formData.get("limitDay")?.toString() || undefined,
+    limitWeek: formData.get("limitWeek")?.toString() || undefined,
+    limitMonth: formData.get("limitMonth")?.toString() || undefined,
   });
 
   const db = getDb();
@@ -136,6 +234,59 @@ export async function updateChat(formData: FormData) {
     .update(chats)
     .set({ name: data.name, description: data.description })
     .where(eq(chats.id, data.id));
+
+  await db.delete(chatGroups).where(eq(chatGroups.chatId, data.id));
+  if (data.groupIds?.length) {
+    await db.insert(chatGroups).values(
+      data.groupIds.map((groupId) => ({
+        chatId: data.id,
+        groupId,
+      })),
+    );
+  }
+
+  await db.delete(chatFiles).where(eq(chatFiles.chatId, data.id));
+  if (data.fileIds?.length) {
+    await db.insert(chatFiles).values(
+      data.fileIds.map((fileId) => ({
+        chatId: data.id,
+        fileId,
+      })),
+    );
+  }
+
+  await db.delete(chatLlmConnectors).where(eq(chatLlmConnectors.chatId, data.id));
+  if (data.connectorId) {
+    await db.insert(chatLlmConnectors).values({
+      chatId: data.id,
+      connectorId: data.connectorId,
+    });
+  }
+
+  await db.delete(chatTokenLimits).where(eq(chatTokenLimits.chatId, data.id));
+  const limitRows = [
+    { interval: "day", value: data.limitDay },
+    { interval: "week", value: data.limitWeek },
+    { interval: "month", value: data.limitMonth },
+  ]
+    .map((entry) => ({
+      interval: entry.interval,
+      limitTokens: entry.value ? Number(entry.value) : null,
+    }))
+    .filter(
+      (entry): entry is { interval: "day" | "week" | "month"; limitTokens: number } =>
+        Number.isFinite(entry.limitTokens) && (entry.limitTokens ?? 0) > 0,
+    );
+
+  if (limitRows.length) {
+    await db.insert(chatTokenLimits).values(
+      limitRows.map((limit) => ({
+        chatId: data.id,
+        interval: limit.interval,
+        limitTokens: limit.limitTokens,
+      })),
+    );
+  }
 
   revalidatePath("/admin/chats");
 }
@@ -151,13 +302,26 @@ export async function createGroup(formData: FormData) {
   const { organization } = await requireAdmin();
   const data = groupSchema.parse({
     name: formData.get("name"),
+    memberIds: formData.getAll("memberIds").filter((id): id is string => typeof id === "string"),
   });
 
   const db = getDb();
-  await db.insert(groups).values({
-    organizationId: organization.id,
-    name: data.name,
-  });
+  const [created] = await db
+    .insert(groups)
+    .values({
+      organizationId: organization.id,
+      name: data.name,
+    })
+    .returning();
+
+  if (data.memberIds?.length) {
+    await db.insert(groupMembers).values(
+      data.memberIds.map((memberId) => ({
+        groupId: created.id,
+        memberId,
+      })),
+    );
+  }
 
   revalidatePath("/admin/groups");
 }
@@ -166,10 +330,20 @@ export async function updateGroup(formData: FormData) {
   const data = groupUpdateSchema.parse({
     id: formData.get("id"),
     name: formData.get("name"),
+    memberIds: formData.getAll("memberIds").filter((id): id is string => typeof id === "string"),
   });
 
   const db = getDb();
   await db.update(groups).set({ name: data.name }).where(eq(groups.id, data.id));
+  await db.delete(groupMembers).where(eq(groupMembers.groupId, data.id));
+  if (data.memberIds?.length) {
+    await db.insert(groupMembers).values(
+      data.memberIds.map((memberId) => ({
+        groupId: data.id,
+        memberId,
+      })),
+    );
+  }
   revalidatePath("/admin/groups");
 }
 
@@ -207,13 +381,26 @@ export async function updateConnector(formData: FormData) {
     name: formData.get("name"),
     provider: formData.get("provider"),
     model: formData.get("model") || undefined,
+    apiKey: formData.get("apiKey") || undefined,
   });
 
   const db = getDb();
-  await db
-    .update(llmConnectors)
-    .set({ name: data.name, provider: data.provider, model: data.model })
-    .where(eq(llmConnectors.id, data.id));
+  const updateValues: {
+    name: string;
+    provider: typeof data.provider;
+    model?: string;
+    apiKeyEncrypted?: string;
+  } = {
+    name: data.name,
+    provider: data.provider,
+    model: data.model,
+  };
+
+  if (data.apiKey) {
+    updateValues.apiKeyEncrypted = data.apiKey;
+  }
+
+  await db.update(llmConnectors).set(updateValues).where(eq(llmConnectors.id, data.id));
 
   revalidatePath("/admin/connectors");
 }
@@ -291,50 +478,60 @@ export async function deleteTokenLimit(formData: FormData) {
 
 export async function uploadFile(formData: FormData) {
   const { organization } = await requireAdmin();
-  const file = formData.get("file");
+  const filesInput = formData.getAll("files");
+  const filesToUpload = filesInput.filter((entry): entry is File => entry instanceof File);
 
-  if (!file || !(file instanceof File)) {
-    throw new Error("File is required");
+  if (filesToUpload.length === 0) {
+    return { ok: false, error: "At least one file is required." };
   }
 
   const db = getDb();
-  const key = `org-${organization.id}/${Date.now()}-${file.name}`;
-  await uploadToR2({
-    key,
-    body: file,
-    contentType: file.type,
-  });
+  const uploaded: string[] = [];
 
-  const [storedFile] = await db
-    .insert(files)
-    .values({
-      organizationId: organization.id,
-      name: file.name,
-      storageProvider: "r2",
-      storageKey: key,
-      mimeType: file.type,
-      size: file.size,
-      metadata: null,
-    })
-    .returning();
+  for (const file of filesToUpload) {
+    const key = `org-${organization.id}/${Date.now()}-${file.name}`;
+    await uploadToR2({
+      key,
+      body: file,
+      contentType: file.type,
+    });
 
-  if (file.type.startsWith("text/")) {
-    const text = await file.text();
-    const chunks = chunkText(text);
-    if (chunks.length) {
-      const embeddings = await embedTexts(chunks);
-      const values = chunks.map((content, index) => ({
-        fileId: storedFile.id,
-        chunkIndex: index,
-        content,
-        tokenCount: estimateTokens(content),
-        embedding: embeddings[index],
-      }));
-      await db.insert(fileChunks).values(values);
+    const [storedFile] = await db
+      .insert(files)
+      .values({
+        organizationId: organization.id,
+        name: file.name,
+        storageProvider: "r2",
+        storageKey: key,
+        mimeType: file.type,
+        size: file.size,
+        metadata: null,
+      })
+      .returning();
+
+    uploaded.push(file.name);
+
+    if (file.type.startsWith("text/")) {
+      const text = await file.text();
+      const chunks = chunkText(text);
+      if (chunks.length) {
+        const embeddings = await embedTexts(chunks);
+        if (embeddings.length) {
+          const values = chunks.map((content, index) => ({
+            fileId: storedFile.id,
+            chunkIndex: index,
+            content,
+            tokenCount: estimateTokens(content),
+            embedding: embeddings[index],
+          }));
+          await db.insert(fileChunks).values(values);
+        }
+      }
     }
   }
 
   revalidatePath("/admin/files");
+  return { ok: true, count: uploaded.length, names: uploaded };
 }
 
 export async function renameFile(formData: FormData) {
@@ -446,25 +643,31 @@ export async function unlinkChatFromConnector(formData: FormData) {
 export async function inviteMember(formData: FormData) {
   const { userId, orgId } = await auth();
   if (!userId || !orgId) {
-    throw new Error("Organization required");
+    return { ok: false, error: "Organization required" };
   }
   if (!process.env.CLERK_SECRET_KEY) {
-    throw new Error("CLERK_SECRET_KEY is not configured");
+    return { ok: false, error: "CLERK_SECRET_KEY is not configured" };
   }
 
+  const client = await clerkClient();
   const data = inviteSchema.parse({
     emailAddress: formData.get("emailAddress"),
     role: formData.get("role"),
   });
 
-  await clerkClient.organizations.createOrganizationInvitation({
-    organizationId: orgId,
-    inviterUserId: userId,
-    emailAddress: data.emailAddress,
-    role: data.role,
-  });
+  try {
+    await client.organizations.createOrganizationInvitation({
+      organizationId: orgId,
+      inviterUserId: userId,
+      emailAddress: data.emailAddress,
+      role: data.role,
+    });
+  } catch (error) {
+    return { ok: false, error: getClerkErrorMessage(error) };
+  }
 
   revalidatePath("/admin/members");
+  return { ok: true };
 }
 
 export async function revokeInvitation(formData: FormData) {
@@ -476,15 +679,20 @@ export async function revokeInvitation(formData: FormData) {
     throw new Error("CLERK_SECRET_KEY is not configured");
   }
 
+  const client = await clerkClient();
   const data = revokeInviteSchema.parse({
     invitationId: formData.get("invitationId"),
   });
 
-  await clerkClient.organizations.revokeOrganizationInvitation({
-    organizationId: orgId,
-    invitationId: data.invitationId,
-    requestingUserId: userId,
-  });
+  try {
+    await client.organizations.revokeOrganizationInvitation({
+      organizationId: orgId,
+      invitationId: data.invitationId,
+      requestingUserId: userId,
+    });
+  } catch (error) {
+    throw new Error(getClerkErrorMessage(error));
+  }
 
   revalidatePath("/admin/members");
 }
@@ -498,24 +706,29 @@ export async function resendInvitation(formData: FormData) {
     throw new Error("CLERK_SECRET_KEY is not configured");
   }
 
+  const client = await clerkClient();
   const data = resendInviteSchema.parse({
     invitationId: formData.get("invitationId"),
     emailAddress: formData.get("emailAddress"),
     role: formData.get("role"),
   });
 
-  await clerkClient.organizations.revokeOrganizationInvitation({
-    organizationId: orgId,
-    invitationId: data.invitationId,
-    requestingUserId: userId,
-  });
+  try {
+    await client.organizations.revokeOrganizationInvitation({
+      organizationId: orgId,
+      invitationId: data.invitationId,
+      requestingUserId: userId,
+    });
 
-  await clerkClient.organizations.createOrganizationInvitation({
-    organizationId: orgId,
-    inviterUserId: userId,
-    emailAddress: data.emailAddress,
-    role: data.role,
-  });
+    await client.organizations.createOrganizationInvitation({
+      organizationId: orgId,
+      inviterUserId: userId,
+      emailAddress: data.emailAddress,
+      role: data.role,
+    });
+  } catch (error) {
+    throw new Error(getClerkErrorMessage(error));
+  }
 
   revalidatePath("/admin/members");
 }
@@ -530,11 +743,16 @@ export async function updateMemberRole(formData: FormData) {
     role: formData.get("role"),
   });
 
-  await clerkClient.organizations.updateOrganizationMembership({
-    organizationId: orgId,
-    membershipId: data.membershipId,
-    role: data.role,
-  });
+  const client = await clerkClient();
+  try {
+    await client.organizations.updateOrganizationMembership({
+      organizationId: orgId,
+      membershipId: data.membershipId,
+      role: data.role,
+    });
+  } catch (error) {
+    throw new Error(getClerkErrorMessage(error));
+  }
 
   revalidatePath("/admin/members");
 }
@@ -546,10 +764,15 @@ export async function deleteMemberRole(formData: FormData) {
   }
   const membershipId = z.string().parse(formData.get("membershipId"));
 
-  await clerkClient.organizations.deleteOrganizationMembership({
-    organizationId: orgId,
-    membershipId,
-  });
+  const client = await clerkClient();
+  try {
+    await client.organizations.deleteOrganizationMembership({
+      organizationId: orgId,
+      membershipId,
+    });
+  } catch (error) {
+    throw new Error(getClerkErrorMessage(error));
+  }
 
   revalidatePath("/admin/members");
 }

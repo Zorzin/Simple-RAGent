@@ -2,8 +2,7 @@ import Link from "next/link";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import UploadFilesForm from "@/components/admin/UploadFilesForm";
 import { requireAdmin } from "@/lib/admin";
 
 import { uploadFile } from "../../actions";
@@ -38,12 +37,7 @@ export default async function NewFilePage({ params }: Props) {
         </div>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <form action={uploadFile} className="space-y-3">
-          <Input name="file" type="file" required />
-          <Button type="submit">Upload file</Button>
-        </form>
-      </Card>
+      <UploadFilesForm locale={locale} action={uploadFile} />
     </div>
   );
 }
