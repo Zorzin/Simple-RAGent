@@ -22,7 +22,8 @@ import {
 } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
 import { chunkText, embedTexts, estimateTokens } from "@/lib/embeddings";
-import { deleteFromR2, uploadToR2 } from "@/lib/storage/r2";
+import { extractTextFromBuffer } from "@/lib/file-text";
+import { deleteFromR2, downloadFromR2, uploadToR2 } from "@/lib/storage/r2";
 
 function getClerkErrorMessage(error: unknown) {
   if (error && typeof error === "object" && "errors" in error) {
@@ -511,8 +512,13 @@ export async function uploadFile(formData: FormData) {
 
     uploaded.push(file.name);
 
-    if (file.type.startsWith("text/")) {
-      const text = await file.text();
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const text = await extractTextFromBuffer({
+      buffer,
+      mimeType: file.type,
+      filename: file.name,
+    });
+    if (text) {
       const chunks = chunkText(text);
       if (chunks.length) {
         const embeddings = await embedTexts(chunks);
@@ -532,6 +538,51 @@ export async function uploadFile(formData: FormData) {
 
   revalidatePath("/admin/files");
   return { ok: true, count: uploaded.length, names: uploaded };
+}
+
+export async function embedFile(formData: FormData) {
+  const { organization } = await requireAdmin();
+  const id = z.string().uuid().parse(formData.get("id"));
+  const db = getDb();
+  const [file] = await db.select().from(files).where(eq(files.id, id)).limit(1);
+  if (!file || file.organizationId !== organization.id) {
+    throw new Error("File not found");
+  }
+
+  if (!file.storageKey) {
+    throw new Error("File storage key missing");
+  }
+
+  const buffer = await downloadFromR2(file.storageKey);
+  const text = await extractTextFromBuffer({
+    buffer,
+    mimeType: file.mimeType,
+    filename: file.name,
+  });
+
+  await db.delete(fileChunks).where(eq(fileChunks.fileId, file.id));
+
+  if (!text) {
+    revalidatePath("/admin/files");
+    return;
+  }
+
+  const chunks = chunkText(text);
+  if (chunks.length) {
+    const embeddings = await embedTexts(chunks);
+    if (embeddings.length) {
+      const values = chunks.map((content, index) => ({
+        fileId: file.id,
+        chunkIndex: index,
+        content,
+        tokenCount: estimateTokens(content),
+        embedding: embeddings[index],
+      }));
+      await db.insert(fileChunks).values(values);
+    }
+  }
+
+  revalidatePath("/admin/files");
 }
 
 export async function renameFile(formData: FormData) {

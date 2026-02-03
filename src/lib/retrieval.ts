@@ -9,7 +9,11 @@ export async function searchFileChunks(params: {
   fileIds?: string[];
 }) {
   const { query, limit = 8, fileIds } = params;
-  const vector = toVectorLiteral(await embedText(query));
+  const embedded = await embedText(query);
+  if (!embedded || embedded.length === 0) {
+    return [];
+  }
+  const vector = toVectorLiteral(embedded);
   const db = getDb();
 
   const whereClause = fileIds?.length

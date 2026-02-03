@@ -279,6 +279,7 @@ export const messages = pgTable(
     chatId: uuid("chat_id")
       .references(() => chats.id)
       .notNull(),
+    sessionId: uuid("session_id"),
     memberId: uuid("member_id").references(() => members.id),
     role: text("role").notNull(),
     content: text("content").notNull(),
@@ -288,5 +289,23 @@ export const messages = pgTable(
   (table) => ({
     chatIdx: index("messages_chat_idx").on(table.chatId),
     memberIdx: index("messages_member_idx").on(table.memberId),
+    sessionIdx: index("messages_session_idx").on(table.sessionId),
+  }),
+);
+
+export const chatSessions = pgTable(
+  "chat_sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    chatId: uuid("chat_id")
+      .references(() => chats.id)
+      .notNull(),
+    memberId: uuid("member_id").references(() => members.id),
+    title: text("title"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    chatIdx: index("chat_sessions_chat_idx").on(table.chatId),
+    memberIdx: index("chat_sessions_member_idx").on(table.memberId),
   }),
 );

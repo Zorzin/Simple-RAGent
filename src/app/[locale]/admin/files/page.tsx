@@ -3,16 +3,17 @@ import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import ConfirmButton from "@/components/admin/ConfirmButton";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getDb } from "@/db";
-import { files } from "@/db/schema";
+import { fileChunks, files } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
 import { buildPageHref, getPageParams, getTotalPages } from "@/lib/pagination";
 import { getSortParams } from "@/lib/sorting";
 
-import { deleteFile } from "../actions";
+import { deleteFile, embedFile } from "../actions";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -41,7 +42,22 @@ export default async function FilesPage({ params, searchParams }: Props) {
         : desc(files.name);
 
   const [rows, totalRows] = await Promise.all([
-    db.select().from(files).where(whereClause).orderBy(orderByClause).limit(limit).offset(offset),
+    db
+      .select({
+        id: files.id,
+        name: files.name,
+        mimeType: files.mimeType,
+        size: files.size,
+        createdAt: files.createdAt,
+        chunkCount: sql<number>`count(${fileChunks.id})`,
+      })
+      .from(files)
+      .leftJoin(fileChunks, eq(fileChunks.fileId, files.id))
+      .where(whereClause)
+      .groupBy(files.id)
+      .orderBy(orderByClause)
+      .limit(limit)
+      .offset(offset),
     db
       .select({ count: sql<number>`count(*)` })
       .from(files)
@@ -108,13 +124,14 @@ export default async function FilesPage({ params, searchParams }: Props) {
                     Created
                   </Link>
                 </th>
+                <th className="px-4 py-3 text-left font-semibold">Embedding</th>
                 <th className="px-4 py-3 text-right font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-6 text-zinc-500" colSpan={4}>
+                  <td className="px-4 py-6 text-zinc-500" colSpan={5}>
                     No files uploaded.
                   </td>
                 </tr>
@@ -126,6 +143,13 @@ export default async function FilesPage({ params, searchParams }: Props) {
                     <td className="px-4 py-3 text-zinc-500">
                       {file.createdAt?.toISOString?.().slice(0, 10) ?? "—"}
                     </td>
+                    <td className="px-4 py-3">
+                      {Number(file.chunkCount) > 0 ? (
+                        <Badge>Embedded</Badge>
+                      ) : (
+                        <Badge variant="outline">No embeddings</Badge>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
                         <Link
@@ -134,6 +158,15 @@ export default async function FilesPage({ params, searchParams }: Props) {
                         >
                           Edit
                         </Link>
+                        <form action={embedFile}>
+                          <input type="hidden" name="id" value={file.id} />
+                          <ConfirmButton
+                            className="text-xs font-medium text-zinc-600 hover:text-zinc-900"
+                            confirmText="Embed this file now?"
+                          >
+                            {Number(file.chunkCount) > 0 ? "Re-embed" : "Embed"}
+                          </ConfirmButton>
+                        </form>
                         <form action={deleteFile}>
                           <input type="hidden" name="id" value={file.id} />
                           <ConfirmButton

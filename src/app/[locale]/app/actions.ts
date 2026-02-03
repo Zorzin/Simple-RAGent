@@ -6,22 +6,23 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { chatFiles, chatLlmConnectors, chats, llmConnectors, messages } from "@/db/schema";
+import { chatFiles, chatLlmConnectors, chatSessions, chats, llmConnectors } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
 import { estimateTokens } from "@/lib/embeddings";
 import { generateResponse } from "@/lib/llm";
+import { safeInsertMessage } from "@/lib/messages";
 import { getOrCreateMember } from "@/lib/organization";
 import { searchFileChunks } from "@/lib/retrieval";
 import { getTokenLimitStatus } from "@/lib/token-limits";
 
 const sendSchema = z.object({
-  chatId: z.string().uuid(),
+  sessionId: z.string().uuid(),
   content: z.string().min(1),
 });
 
 export async function sendMessage(formData: FormData) {
   const data = sendSchema.parse({
-    chatId: formData.get("chatId"),
+    sessionId: formData.get("sessionId"),
     content: formData.get("content"),
   });
 
@@ -29,7 +30,17 @@ export async function sendMessage(formData: FormData) {
   const { organization, member } = await getOrCreateMember();
   await requireUser();
 
-  const [chat] = await db.select().from(chats).where(eq(chats.id, data.chatId));
+  const [session] = await db
+    .select()
+    .from(chatSessions)
+    .where(eq(chatSessions.id, data.sessionId))
+    .limit(1);
+
+  if (!session) {
+    throw new Error("Chat session not found");
+  }
+
+  const [chat] = await db.select().from(chats).where(eq(chats.id, session.chatId));
 
   if (!chat || chat.organizationId !== organization.id) {
     throw new Error("Chat not found");
@@ -115,21 +126,23 @@ export async function sendMessage(formData: FormData) {
       ? `I found relevant context:\n\n${context}\n\nConnect a model to get a full answer.`
       : "No model connected yet. Connect a model to reply.";
 
-  await db.insert(messages).values({
+  await safeInsertMessage({
     chatId: chat.id,
+    sessionId: session.id,
     memberId: member.id,
     role: "user",
     content: data.content,
     tokenCount: promptTokens,
   });
 
-  await db.insert(messages).values({
+  await safeInsertMessage({
     chatId: chat.id,
+    sessionId: session.id,
     memberId: member.id,
     role: "assistant",
     content: assistantReply,
     tokenCount: estimateTokens(assistantReply),
   });
 
-  revalidatePath(`/app/chats/${chat.id}`);
+  revalidatePath(`/app/sessions/${session.id}`);
 }

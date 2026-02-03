@@ -2,15 +2,17 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { chatFiles, chatLlmConnectors, chats, llmConnectors, messages } from "@/db/schema";
+import { chatFiles, chatLlmConnectors, chatSessions, chats, llmConnectors } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { estimateTokens } from "@/lib/embeddings";
+import { generateResponse } from "@/lib/llm";
 import { getOrCreateMember } from "@/lib/organization";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 
 import { searchFileChunks } from "@/lib/retrieval";
 import { getTokenLimitStatus } from "@/lib/token-limits";
+import { safeInsertMessage } from "@/lib/messages";
 
 export async function POST(request: Request) {
   const { userId } = await auth();
@@ -18,15 +20,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json()) as { chatId?: string; content?: string };
-  if (!body.chatId || !body.content) {
+  const body = (await request.json()) as { sessionId?: string; content?: string };
+  if (!body.sessionId || !body.content) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
   const db = getDb();
   const { organization, member } = await getOrCreateMember();
 
-  const [chat] = await db.select().from(chats).where(eq(chats.id, body.chatId)).limit(1);
+  const [session] = await db
+    .select()
+    .from(chatSessions)
+    .where(eq(chatSessions.id, body.sessionId))
+    .limit(1);
+  if (!session) {
+    return NextResponse.json({ error: "Chat session not found" }, { status: 404 });
+  }
+
+  const [chat] = await db.select().from(chats).where(eq(chats.id, session.chatId)).limit(1);
   if (!chat || chat.organizationId !== organization.id) {
     return NextResponse.json({ error: "Chat not found" }, { status: 404 });
   }
@@ -109,8 +120,9 @@ export async function POST(request: Request) {
     );
   }
 
-  await db.insert(messages).values({
+  await safeInsertMessage({
     chatId: chat.id,
+    sessionId: session.id,
     memberId: member.id,
     role: "user",
     content: body.content,
@@ -119,6 +131,8 @@ export async function POST(request: Request) {
 
   const encoder = new TextEncoder();
   let finalText = "";
+  const shouldGenerateTitle =
+    !session.title || session.title.trim().length === 0 || session.title === chat.name;
   const stream = new ReadableStream({
     async start(controller) {
       try {
@@ -130,8 +144,9 @@ export async function POST(request: Request) {
           controller.enqueue(encoder.encode(`data: ${fallback}\n\n`));
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
           controller.close();
-          await db.insert(messages).values({
+          await safeInsertMessage({
             chatId: chat.id,
+            sessionId: session.id,
             memberId: member.id,
             role: "assistant",
             content: finalText,
@@ -215,13 +230,41 @@ export async function POST(request: Request) {
         controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
         controller.close();
 
-        await db.insert(messages).values({
+        await safeInsertMessage({
           chatId: chat.id,
+          sessionId: session.id,
           memberId: member.id,
           role: "assistant",
           content: finalText,
           tokenCount: estimateTokens(finalText),
         });
+
+        if (shouldGenerateTitle && connector?.provider) {
+          try {
+            const titlePrompt = `Create a short, descriptive chat title (3-6 words). Return only the title.\n\nUser: ${body.content}\nAssistant: ${finalText}`;
+            const title = await generateResponse({
+              provider: connector.provider,
+              model: connector.model,
+              apiKey: resolvedApiKey,
+              system: "You are a helpful assistant that writes concise chat titles.",
+              user: titlePrompt,
+              maxOutputTokens: 20,
+            });
+
+            const cleaned = title
+              .trim()
+              .replace(/^\"|\"$/g, "")
+              .slice(0, 80);
+            if (cleaned) {
+              await db
+                .update(chatSessions)
+                .set({ title: cleaned })
+                .where(eq(chatSessions.id, session.id));
+            }
+          } catch {
+            // Ignore title generation errors.
+          }
+        }
       } catch {
         controller.enqueue(encoder.encode(`data: [ERROR]\n\n`));
         controller.close();
