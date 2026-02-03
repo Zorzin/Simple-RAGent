@@ -24,7 +24,7 @@ export async function generateResponse(params: {
       apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
     });
     if (!client.apiKey) {
-      throw new Error("ANTHROPIC_API_KEY is not configured");
+      throw new Error("ANTHROPIC_API_KEY_MISSING");
     }
 
     const response = await client.messages.create({
@@ -45,7 +45,7 @@ export async function generateResponse(params: {
   if (provider === "openai") {
     const client = new OpenAI({ apiKey: apiKey || process.env.OPENAI_API_KEY });
     if (!client.apiKey) {
-      throw new Error("OPENAI_API_KEY is not configured");
+      throw new Error("OPENAI_API_KEY_MISSING");
     }
 
     const response = await client.responses.create({
@@ -66,7 +66,7 @@ export async function generateResponse(params: {
       baseURL: DEFAULT_COPILOT_BASE_URL,
     });
     if (!client.apiKey) {
-      throw new Error("GitHub Copilot token is not configured");
+      throw new Error("GITHUB_COPILOT_TOKEN_MISSING");
     }
 
     const response = await client.chat.completions.create({

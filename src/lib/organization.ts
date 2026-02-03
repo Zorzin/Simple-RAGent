@@ -40,7 +40,7 @@ export async function getOrCreateMember() {
   const { orgId, orgRole } = await getActiveOrg();
 
   if (!org || !orgId) {
-    throw new Error("No active organization");
+    throw new Error("ORG_NOT_ACTIVE");
   }
 
   const [existing] = await db

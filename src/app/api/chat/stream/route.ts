@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 
 import { getDb } from "@/db";
 import { chatFiles, chatLlmConnectors, chatSessions, chats, llmConnectors } from "@/db/schema";
@@ -17,12 +18,16 @@ import { safeInsertMessage } from "@/lib/messages";
 export async function POST(request: Request) {
   const { userId } = await auth();
   if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ errorCode: "unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json()) as { sessionId?: string; content?: string };
+  const body = (await request.json()) as { sessionId?: string; content?: string; locale?: string };
+  const locale = body.locale || "en";
+  const tChat = await getTranslations({ locale, namespace: "app.chat" });
+  const tPrompts = await getTranslations({ locale, namespace: "app.prompts" });
+
   if (!body.sessionId || !body.content) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return NextResponse.json({ errorCode: "invalidPayload" }, { status: 400 });
   }
 
   const db = getDb();
@@ -34,12 +39,12 @@ export async function POST(request: Request) {
     .where(eq(chatSessions.id, body.sessionId))
     .limit(1);
   if (!session) {
-    return NextResponse.json({ error: "Chat session not found" }, { status: 404 });
+    return NextResponse.json({ errorCode: "sessionNotFound" }, { status: 404 });
   }
 
   const [chat] = await db.select().from(chats).where(eq(chats.id, session.chatId)).limit(1);
   if (!chat || chat.organizationId !== organization.id) {
-    return NextResponse.json({ error: "Chat not found" }, { status: 404 });
+    return NextResponse.json({ errorCode: "chatNotFound" }, { status: 404 });
   }
 
   const fileRows = await db
@@ -53,6 +58,7 @@ export async function POST(request: Request) {
     : [];
 
   const context = retrieved.map((chunk, index) => `#${index + 1}: ${chunk.content}`).join("\n\n");
+  const contextText = context || tPrompts("noContext");
 
   const connectorRows = await db
     .select({
@@ -80,7 +86,7 @@ export async function POST(request: Request) {
     availableConnectors.find((row) => row.provider === "copilot") ||
     availableConnectors[0];
 
-  const systemPrompt = `You are a company assistant. Use the provided context when relevant. If context is missing, answer normally and mention uncertainty.\n\nContext:\n${context || "No relevant context."}`;
+  const systemPrompt = tPrompts("system", { context: contextText });
   const maxOutputTokens = 800;
   const promptTokens = estimateTokens(`${systemPrompt}\n\n${body.content}`);
 
@@ -96,7 +102,7 @@ export async function POST(request: Request) {
   if (connector?.provider && !resolvedApiKey) {
     return NextResponse.json(
       {
-        error: "Selected connector is missing an API key.",
+        errorCode: "missingApiKey",
       },
       { status: 400 },
     );
@@ -113,7 +119,7 @@ export async function POST(request: Request) {
   if (limitStatus.blocked) {
     return NextResponse.json(
       {
-        error: "Token limit exceeded",
+        errorCode: "tokenLimit",
         limits: limitStatus.items,
       },
       { status: 429 },
@@ -138,8 +144,8 @@ export async function POST(request: Request) {
       try {
         if (!connector?.provider) {
           const fallback = context
-            ? `I found relevant context:\n\n${context}\n\nConnect a model to get a full answer.`
-            : "No model connected yet. Connect a model to reply.";
+            ? tChat("fallbackWithContext", { context })
+            : tChat("fallbackNoModel");
           finalText = fallback;
           controller.enqueue(encoder.encode(`data: ${fallback}\n\n`));
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
@@ -222,7 +228,7 @@ export async function POST(request: Request) {
             }
           }
         } else {
-          const fallback = "Connected provider is not supported for streaming yet.";
+          const fallback = tChat("unsupportedProvider");
           finalText = fallback;
           controller.enqueue(encoder.encode(`data: ${fallback}\n\n`));
         }
@@ -241,12 +247,15 @@ export async function POST(request: Request) {
 
         if (shouldGenerateTitle && connector?.provider) {
           try {
-            const titlePrompt = `Create a short, descriptive chat title (3-6 words). Return only the title.\n\nUser: ${body.content}\nAssistant: ${finalText}`;
+            const titlePrompt = tPrompts("titlePrompt", {
+              user: body.content,
+              assistant: finalText,
+            });
             const title = await generateResponse({
               provider: connector.provider,
               model: connector.model,
               apiKey: resolvedApiKey,
-              system: "You are a helpful assistant that writes concise chat titles.",
+              system: tPrompts("titleSystem"),
               user: titlePrompt,
               maxOutputTokens: 20,
             });

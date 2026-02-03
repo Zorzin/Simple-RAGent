@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ type Props = {
 };
 
 export default function ChatSidebar({ locale, chats, sessions }: Props) {
+  const t = useTranslations("app.sidebar");
+  const tErrors = useTranslations("app.errors");
   const pathname = usePathname();
   const router = useRouter();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -64,23 +67,23 @@ export default function ChatSidebar({ locale, chats, sessions }: Props) {
       const response = await fetch("/api/chat/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatId: selectedChat }),
+        body: JSON.stringify({ chatId: selectedChat, locale }),
       });
       const data = (await response.json()) as {
         sessionId?: string;
         title?: string;
         createdAt?: string | null;
-        error?: string;
+        errorCode?: string;
       };
       if (!response.ok || !data.sessionId) {
-        setCreateError(data.error || "Unable to create chat session.");
+        setCreateError(data.errorCode ? tErrors(data.errorCode) : t("createError"));
         return;
       }
       setSessionItems((prev) => [
         {
           id: data.sessionId,
           chatId: selectedChat,
-          title: data.title ?? "New chat",
+          title: data.title ?? t("newChatTitle"),
           createdAt: data.createdAt ?? null,
         },
         ...prev,
@@ -88,7 +91,7 @@ export default function ChatSidebar({ locale, chats, sessions }: Props) {
       router.push(`/${locale}/app/sessions/${data.sessionId}`);
       setIsPickerOpen(false);
     } catch {
-      setCreateError("Unable to create chat session.");
+      setCreateError(t("createError"));
     } finally {
       setIsCreating(false);
     }
@@ -98,7 +101,7 @@ export default function ChatSidebar({ locale, chats, sessions }: Props) {
     <div className="flex h-full flex-col gap-4">
       <div>
         <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-          Workspace
+          {t("workspace")}
         </div>
         <Button
           type="button"
@@ -107,17 +110,17 @@ export default function ChatSidebar({ locale, chats, sessions }: Props) {
           disabled={chats.length === 0}
           onClick={() => setIsPickerOpen(true)}
         >
-          {chats.length === 0 ? "No chats available" : "Create chat"}
+          {chats.length === 0 ? t("noChatsAvailable") : t("createChat")}
         </Button>
         {isPickerOpen && chats.length > 0 ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
             <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl">
-              <div className="text-lg font-semibold text-zinc-900">Start a new chat</div>
+              <div className="text-lg font-semibold text-zinc-900">{t("startNewChatTitle")}</div>
               <p className="mt-1 text-sm text-zinc-600">
-                Choose the chat type (files, access rules, limits) you want to use.
+                {t("startNewChatDescription")}
               </p>
               <div className="mt-4 space-y-2">
-                <label className="text-xs font-semibold text-zinc-500">Chat type</label>
+                <label className="text-xs font-semibold text-zinc-500">{t("chatType")}</label>
                 <select
                   className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
                   value={selectedChat}
@@ -133,10 +136,10 @@ export default function ChatSidebar({ locale, chats, sessions }: Props) {
               {createError ? <p className="mt-3 text-xs text-red-500">{createError}</p> : null}
               <div className="mt-6 flex items-center justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsPickerOpen(false)}>
-                  Cancel
+                  {t("cancel")}
                 </Button>
                 <Button type="button" disabled={isCreating} onClick={handleCreateChat}>
-                  {isCreating ? "Creating..." : "Start chat"}
+                  {isCreating ? t("creating") : t("startChat")}
                 </Button>
               </div>
             </div>
@@ -144,11 +147,13 @@ export default function ChatSidebar({ locale, chats, sessions }: Props) {
         ) : null}
       </div>
 
-      <div className="text-xs font-semibold uppercase tracking-wide text-zinc-400">History</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+        {t("history")}
+      </div>
       <div className="flex-1 space-y-1 overflow-y-auto">
         {sessionItems.length === 0 ? (
           <div className="rounded-lg border border-dashed border-zinc-200 px-3 py-4 text-sm text-zinc-500">
-            No chats yet. Start a new one.
+            {t("noChatsYet")}
           </div>
         ) : (
           sessionItems.map((session) => {

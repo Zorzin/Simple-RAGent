@@ -3,10 +3,10 @@
 import type { ButtonHTMLAttributes } from "react";
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
-  confirmText?: string;
+  confirmText: string;
 };
 
-export default function ConfirmButton({ confirmText = "Are you sure?", onClick, ...props }: Props) {
+export default function ConfirmButton({ confirmText, onClick, ...props }: Props) {
   return (
     <button
       {...props}

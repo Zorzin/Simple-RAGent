@@ -1,14 +1,546 @@
 {
   "home": {
-    "title": "Firmowe AI, prywatne z założenia",
-    "subtitle": "Rozmawiaj z wiedzą firmy, projektami i plikami. Administratorzy kontrolują dostęp, limity i modele.",
+    "title": "Firmowa AI, prywatna z założenia",
+    "subtitle": "Rozmawiaj z wiedzą, projektami i plikami firmy. Administratorzy kontrolują dostęp, limity i modele.",
     "ctaPrimary": "Otwórz workspace",
     "ctaSecondary": "Panel admina",
     "sectionTitle": "Co dostarczy ta aplikacja",
-    "feature1": "Prywatne czaty ograniczone do plików i projektów",
-    "feature2": "Grupy i zaproszenia członków z rolami",
-    "feature3": "Konektory LLM per czat z obsługą API key",
-    "feature4": "Limity tokenów: dzień, tydzień, miesiąc",
-    "comingSoon": "Fundament gotowy. Kolejne kroki to logika i integracje."
+    "feature1": "Prywatne czaty powiązane z plikami i projektami",
+    "feature2": "Grupy i zaproszenia członków z dostępem opartym o role",
+    "feature3": "Konektory LLM per czat z obsługą kluczy API",
+    "feature4": "Limity tokenów dzienne, tygodniowe, miesięczne",
+    "comingSoon": "Solidny fundament gotowy. Następne: kluczowe przepływy i integracje."
+  },
+  "app": {
+    "chat": {
+      "sendError": "Nie udało się wysłać wiadomości.",
+      "empty": "Brak wiadomości.",
+      "placeholder": "Zadaj pytanie...",
+      "sending": "Wysyłanie...",
+      "send": "Wyślij",
+      "roleUser": "Użytkownik",
+      "roleAssistant": "Asystent",
+      "fallbackWithContext": "Znalazłem istotny kontekst:\n\n{context}\n\nPodłącz model, aby uzyskać pełną odpowiedź.",
+      "fallbackNoModel": "Nie podłączono żadnego modelu. Podłącz model, aby odpowiedzieć.",
+      "unsupportedProvider": "Podłączony dostawca nie obsługuje jeszcze streamingu."
+    },
+    "sidebar": {
+      "workspace": "Workspace",
+      "noChatsAvailable": "Brak dostępnych czatów",
+      "createChat": "Utwórz czat",
+      "startNewChatTitle": "Rozpocznij nowy czat",
+      "startNewChatDescription": "Wybierz typ czatu (pliki, zasady dostępu, limity), z którego chcesz korzystać.",
+      "chatType": "Typ czatu",
+      "cancel": "Anuluj",
+      "creating": "Tworzenie...",
+      "startChat": "Start",
+      "history": "Historia",
+      "noChatsYet": "Brak czatów. Rozpocznij nowy.",
+      "createError": "Nie udało się utworzyć sesji czatu.",
+      "newChatTitle": "Nowy czat"
+    },
+    "errors": {
+      "unauthorized": "Zaloguj się, aby kontynuować.",
+      "invalidPayload": "Nieprawidłowe żądanie. Spróbuj ponownie.",
+      "chatRequired": "Wybierz czat, aby kontynuować.",
+      "chatNotFound": "Wybrany czat nie został znaleziony.",
+      "sessionNotFound": "Nie znaleziono sesji czatu.",
+      "missingApiKey": "Wybrany konektor nie ma klucza API.",
+      "tokenLimit": "Przekroczono limit tokenów. Spróbuj później."
+    },
+    "prompts": {
+      "system": "Jesteś firmowym asystentem. Gdy to możliwe, korzystaj z dostarczonego kontekstu. Jeśli kontekstu brakuje, odpowiadaj normalnie i zaznacz niepewność.\n\nKontekst:\n{context}",
+      "noContext": "Brak istotnego kontekstu.",
+      "titlePrompt": "Utwórz krótki, opisowy tytuł rozmowy (3–6 słów). Zwróć wyłącznie tytuł.\n\nUżytkownik: {user}\nAsystent: {assistant}",
+      "titleSystem": "Jesteś pomocnym asystentem, który tworzy zwięzłe tytuły rozmów."
+    }
+  },
+  "admin": {
+    "layout": {
+      "title": "Panel admina",
+      "subtitle": "Zarządzaj firmową przestrzenią",
+      "singleOrg": "Tryb jednej organizacji",
+      "nav": {
+        "overview": "Przegląd",
+        "chats": "Czaty",
+        "files": "Pliki",
+        "groups": "Grupy",
+        "members": "Członkowie",
+        "connectors": "Konektory",
+        "limits": "Limity"
+      }
+    },
+    "overview": {
+      "title": "Panel admina",
+      "welcome": "Witaj ponownie, {name}. Wybierz sekcję, którą chcesz zarządzać.",
+      "fallbackName": "administrator",
+      "links": {
+        "chats": {
+          "title": "Czaty",
+          "desc": "Twórz i organizuj pokoje rozmów."
+        },
+        "files": {
+          "title": "Pliki",
+          "desc": "Wgrywaj i zarządzaj plikami wiedzy."
+        },
+        "groups": {
+          "title": "Grupy",
+          "desc": "Kontroluj dostęp członków poprzez grupy."
+        },
+        "members": {
+          "title": "Członkowie",
+          "desc": "Zaproś i zarządzaj rolami członków."
+        },
+        "connectors": {
+          "title": "Konektory",
+          "desc": "Skonfiguruj Claude, OpenAI, Copilot."
+        },
+        "limits": {
+          "title": "Limity",
+          "desc": "Ustaw dzienne, tygodniowe i miesięczne limity użycia."
+        }
+      }
+    },
+    "error": {
+      "fallbackMessage": "Coś poszło nie tak.",
+      "accessTitle": "Wymagany dostęp administratora",
+      "genericTitle": "Coś poszło nie tak",
+      "accessDescription": "Nie masz uprawnień do tej strony.",
+      "genericDescription": "Spróbuj ponownie lub wróć do workspace.",
+      "signIn": "Zaloguj się na inne konto",
+      "goToWorkspace": "Przejdź do workspace"
+    },
+    "connectors": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Konektory",
+      "subtitle": "Skonfiguruj dostawców modeli dla czatów. Klucze API przechowywane są bezpiecznie.",
+      "searchPlaceholder": "Szukaj konektorów",
+      "search": "Szukaj",
+      "new": "Nowy konektor",
+      "listTitle": "Lista konektorów",
+      "columns": {
+        "name": "Nazwa",
+        "provider": "Dostawca",
+        "created": "Utworzono",
+        "actions": "Akcje"
+      },
+      "empty": "Brak konektorów.",
+      "defaultModel": "domyślny",
+      "actions": {
+        "edit": "Edytuj",
+        "delete": "Usuń",
+        "confirmDelete": "Usunąć ten konektor?"
+      },
+      "pagination": {
+        "pageOf": "Strona {page} z {totalPages}",
+        "prev": "Wstecz",
+        "next": "Dalej"
+      }
+    },
+    "connectorsNew": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "connectors": "Konektory",
+        "new": "Nowy"
+      },
+      "title": "Nowy konektor",
+      "subtitle": "Dodaj nowy konektor modelu.",
+      "back": "Wstecz",
+      "submit": "Dodaj konektor"
+    },
+    "connectorsEdit": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "connectors": "Konektory",
+        "edit": "Edytuj"
+      },
+      "title": "Edytuj konektor",
+      "subtitle": "Zaktualizuj dane konektora.",
+      "back": "Wstecz",
+      "save": "Zapisz zmiany",
+      "delete": "Usuń konektor"
+    },
+    "connectorFields": {
+      "providers": {
+        "anthropic": "Anthropic (Claude)",
+        "openai": "OpenAI",
+        "copilot": "GitHub Copilot",
+        "azureOpenai": "Azure OpenAI",
+        "mistral": "Mistral",
+        "custom": "Własny"
+      },
+      "fields": {
+        "namePlaceholder": "Nazwa konektora",
+        "providerLabel": "Dostawca",
+        "modelLabel": "Model",
+        "modelPlaceholder": "Model (opcjonalnie)",
+        "copilotToken": "Token GitHub (z dostępem do Copilot)",
+        "apiKeyPlaceholder": "Klucz API (opcjonalnie)"
+      },
+      "modelErrors": {
+        "missingKey": "Dodaj klucz API, aby wczytać modele.",
+        "loadFailed": "Nie udało się wczytać modeli."
+      },
+      "actions": {
+        "loadingModels": "Wczytywanie modeli...",
+        "loadModels": "Wczytaj modele"
+      },
+      "copilot": {
+        "authorize": "Autoryzuj Copilot (wkrótce)",
+        "helper": "Na razie wklej token GitHub z dostępem do Copilot."
+      }
+    },
+    "limits": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Limity tokenów",
+      "subtitle": "Ustal dzienne, tygodniowe lub miesięczne limity dla członków.",
+      "searchPlaceholder": "Szukaj po nazwie członka",
+      "search": "Szukaj",
+      "new": "Nowy limit",
+      "listTitle": "Aktualne limity",
+      "columns": {
+        "user": "Użytkownik",
+        "interval": "Okres",
+        "limit": "Limit",
+        "created": "Utworzono",
+        "actions": "Akcje"
+      },
+      "empty": "Brak skonfigurowanych limitów.",
+      "actions": {
+        "edit": "Edytuj",
+        "delete": "Usuń",
+        "confirmDelete": "Usunąć ten limit?"
+      },
+      "pagination": {
+        "pageOf": "Strona {page} z {totalPages}",
+        "prev": "Wstecz",
+        "next": "Dalej"
+      }
+    },
+    "limitsNew": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "limits": "Limity",
+        "new": "Nowy"
+      },
+      "title": "Nowy limit tokenów",
+      "subtitle": "Utwórz regułę limitu tokenów.",
+      "back": "Wstecz",
+      "interval": {
+        "day": "Na dzień",
+        "week": "Na tydzień",
+        "month": "Na miesiąc"
+      },
+      "limitPlaceholder": "Limit tokenów",
+      "submit": "Zapisz limit",
+      "anonymous": "Nieznany członek"
+    },
+    "limitsEdit": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "limits": "Limity",
+        "edit": "Edytuj"
+      },
+      "title": "Edytuj limit",
+      "subtitle": "Zaktualizuj limit tokenów.",
+      "back": "Wstecz",
+      "user": "Użytkownik {id}",
+      "interval": {
+        "day": "Na dzień",
+        "week": "Na tydzień",
+        "month": "Na miesiąc"
+      },
+      "save": "Zapisz zmiany",
+      "delete": "Usuń limit",
+      "intervalLabel": "Okres: {interval}"
+    },
+    "groups": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Grupy",
+      "subtitle": "Organizuj członków w grupy, aby kontrolować dostęp do czatów.",
+      "searchPlaceholder": "Szukaj grup",
+      "search": "Szukaj",
+      "new": "Nowa grupa",
+      "listTitle": "Lista grup",
+      "columns": {
+        "name": "Nazwa",
+        "created": "Utworzono",
+        "actions": "Akcje"
+      },
+      "empty": "Brak grup.",
+      "actions": {
+        "edit": "Edytuj",
+        "delete": "Usuń",
+        "confirmDelete": "Usunąć tę grupę?"
+      },
+      "pagination": {
+        "pageOf": "Strona {page} z {totalPages}",
+        "prev": "Wstecz",
+        "next": "Dalej"
+      }
+    },
+    "groupsNew": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "groups": "Grupy",
+        "new": "Nowa"
+      },
+      "title": "Nowa grupa",
+      "subtitle": "Utwórz nową grupę członków.",
+      "back": "Wstecz",
+      "namePlaceholder": "Nazwa grupy",
+      "assignMembers": "Przypisz członków",
+      "noMembers": "Brak członków.",
+      "submit": "Utwórz grupę"
+    },
+    "groupsEdit": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "groups": "Grupy",
+        "edit": "Edytuj"
+      },
+      "title": "Edytuj grupę",
+      "subtitle": "Zaktualizuj szczegóły grupy.",
+      "back": "Wstecz",
+      "assignMembers": "Przypisz członków",
+      "noMembers": "Brak członków.",
+      "save": "Zapisz zmiany",
+      "delete": "Usuń grupę"
+    },
+    "files": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Pliki",
+      "subtitle": "Wgrywaj pliki używane jako kontekst i do wyszukiwania.",
+      "searchPlaceholder": "Szukaj plików",
+      "search": "Szukaj",
+      "new": "Nowy plik",
+      "listTitle": "Lista plików",
+      "columns": {
+        "name": "Nazwa",
+        "type": "Typ",
+        "created": "Utworzono",
+        "embedding": "Embedding",
+        "actions": "Akcje"
+      },
+      "empty": "Brak wgranych plików.",
+      "unknownType": "nieznany",
+      "embedding": {
+        "embedded": "Osadzone",
+        "none": "Brak embeddingów"
+      },
+      "actions": {
+        "edit": "Edytuj",
+        "embed": "Zindeksuj",
+        "reEmbed": "Przeindeksuj",
+        "confirmEmbed": "Zindeksować ten plik teraz?",
+        "delete": "Usuń",
+        "confirmDelete": "Usunąć ten plik?"
+      },
+      "pagination": {
+        "pageOf": "Strona {page} z {totalPages}",
+        "prev": "Wstecz",
+        "next": "Dalej"
+      }
+    },
+    "filesNew": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "files": "Pliki",
+        "new": "Nowy"
+      },
+      "title": "Nowy plik",
+      "subtitle": "Wgraj nowy plik.",
+      "back": "Wstecz"
+    },
+    "filesEdit": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "files": "Pliki",
+        "edit": "Edytuj"
+      },
+      "title": "Edytuj plik",
+      "subtitle": "Zmień nazwę lub usuń ten plik.",
+      "back": "Wstecz",
+      "unknownType": "nieznany",
+      "bytes": "bajty",
+      "save": "Zapisz zmiany",
+      "delete": "Usuń plik"
+    },
+    "upload": {
+      "successTitle": "Przesyłanie zakończone",
+      "successMessage": "Wgrano {count} {files}. Wgrać kolejny?",
+      "uploadMore": "Wgraj więcej",
+      "backToList": "Wróć do listy",
+      "dropzoneTitle": "Przeciągnij i upuść pliki tutaj",
+      "dropzoneHint": "lub kliknij, aby wybrać. Obsługiwane wiele plików.",
+      "browse": "Wybierz pliki",
+      "selected": "Wybrano {count} {files}: {names}",
+      "submit": "Wgraj pliki",
+      "fileSingular": "plik",
+      "filePlural": "pliki"
+    },
+    "members": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Członkowie",
+      "subtitle": "Zaproś współpracowników i zarządzaj ich rolami.",
+      "searchPlaceholder": "Szukaj członków",
+      "search": "Szukaj",
+      "invite": "Zaproś członka",
+      "listTitle": "Lista członków",
+      "columns": {
+        "member": "Członek",
+        "role": "Rola",
+        "actions": "Akcje"
+      },
+      "empty": "Brak członków.",
+      "actions": {
+        "edit": "Edytuj",
+        "remove": "Usuń",
+        "confirmRemove": "Usunąć tego członka?",
+        "resend": "Wyślij ponownie",
+        "confirmResend": "Wysłać ponownie zaproszenie?",
+        "revoke": "Wycofaj",
+        "confirmRevoke": "Wycofać zaproszenie?"
+      },
+      "pagination": {
+        "pageOf": "Strona {page} z {totalPages}",
+        "prev": "Wstecz",
+        "next": "Dalej"
+      },
+      "pendingTitle": "Oczekujące zaproszenia",
+      "pendingEmpty": "Brak oczekujących zaproszeń.",
+      "pendingStatus": "Oczekuje",
+      "anonymous": "Nieznany członek"
+    },
+    "membersInvite": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "members": "Członkowie",
+        "invite": "Zaproś"
+      },
+      "title": "Zaproś członka",
+      "subtitle": "Wyślij zaproszenie do organizacji.",
+      "back": "Wstecz"
+    },
+    "inviteForm": {
+      "successTitle": "Zaproszenie wysłane",
+      "successMessage": "Zaproszenie zostało wysłane. Czy chcesz zaprosić kolejną osobę?",
+      "inviteAnother": "Zaproś kolejną",
+      "backToList": "Wróć do listy",
+      "emailPlaceholder": "Adres e-mail",
+      "roles": {
+        "member": "Członek",
+        "admin": "Administrator"
+      },
+      "submit": "Wyślij zaproszenie"
+    },
+    "membersEdit": {
+      "notFound": "Nie znaleziono członka",
+      "breadcrumbs": {
+        "admin": "Admin",
+        "members": "Członkowie",
+        "edit": "Edytuj"
+      },
+      "title": "Edytuj członka",
+      "subtitle": "Zaktualizuj rolę członka.",
+      "back": "Wstecz",
+      "roles": {
+        "member": "Członek",
+        "admin": "Administrator"
+      },
+      "updateRole": "Zaktualizuj rolę",
+      "remove": "Usuń członka",
+      "anonymous": "Nieznany członek"
+    },
+    "chats": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Czaty",
+      "subtitle": "Twórz pokoje rozmów i definiuj ich zakres, pliki, grupy dostępu i limity.",
+      "searchPlaceholder": "Szukaj czatów",
+      "search": "Szukaj",
+      "new": "Nowy czat",
+      "listTitle": "Lista czatów",
+      "columns": {
+        "name": "Nazwa",
+        "description": "Opis",
+        "created": "Utworzono",
+        "actions": "Akcje"
+      },
+      "empty": "Brak czatów.",
+      "actions": {
+        "edit": "Edytuj",
+        "delete": "Usuń",
+        "confirmDelete": "Usunąć ten czat?"
+      },
+      "pagination": {
+        "pageOf": "Strona {page} z {totalPages}",
+        "prev": "Wstecz",
+        "next": "Dalej"
+      }
+    },
+    "chatsNew": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "chats": "Czaty",
+        "new": "Nowy"
+      },
+      "title": "Nowy czat",
+      "subtitle": "Utwórz nowy pokój czatu.",
+      "back": "Wstecz",
+      "fields": {
+        "namePlaceholder": "Nazwa czatu",
+        "descriptionPlaceholder": "Opis (opcjonalnie)",
+        "assignGroups": "Przypisz grupy",
+        "noGroups": "Brak grup.",
+        "assignFiles": "Przypisz pliki",
+        "noFiles": "Brak plików.",
+        "connector": "Konektor",
+        "noConnector": "Brak konektora"
+      },
+      "limits": {
+        "day": "Limit dzienny",
+        "week": "Limit tygodniowy",
+        "month": "Limit miesięczny",
+        "example": "np. 20000"
+      },
+      "submit": "Utwórz czat"
+    },
+    "chatsEdit": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "chats": "Czaty",
+        "edit": "Edytuj"
+      },
+      "title": "Edytuj czat",
+      "subtitle": "Zaktualizuj szczegóły czatu.",
+      "back": "Wstecz",
+      "fields": {
+        "assignGroups": "Przypisz grupy",
+        "noGroups": "Brak grup.",
+        "assignFiles": "Przypisz pliki",
+        "noFiles": "Brak plików.",
+        "connector": "Konektor",
+        "noConnector": "Brak konektora"
+      },
+      "limits": {
+        "day": "Limit dzienny",
+        "week": "Limit tygodniowy",
+        "month": "Limit miesięczny"
+      },
+      "save": "Zapisz zmiany",
+      "delete": "Usuń czat"
+    }
   }
 }

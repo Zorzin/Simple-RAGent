@@ -39,7 +39,7 @@ export async function fetchOrgMemberships(orgId: string): Promise<MembershipItem
     json.data?.map((item) => ({
       id: item.id,
       userId: item.public_user_data?.user_id ?? "",
-      identifier: item.public_user_data?.identifier ?? "Member",
+      identifier: item.public_user_data?.identifier ?? "",
       role: item.role,
     })) ?? []
   );

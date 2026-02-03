@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { desc, eq, sql } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import ChatSidebar from "@/components/app/ChatSidebar";
@@ -14,6 +15,7 @@ type Props = {
 
 export default async function AppLayout({ children, params }: Props) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "app.sidebar" });
   const { orgId } = await auth();
   if (!orgId) {
     redirect(`/${locale}/create-organization`);
@@ -53,7 +55,7 @@ export default async function AppLayout({ children, params }: Props) {
           sessions={sessionRows.map((session) => ({
             id: session.id,
             chatId: session.chatId,
-            title: session.title || session.chatName || "New chat",
+            title: session.title || session.chatName || t("newChatTitle"),
             createdAt:
               session.lastMessageAt?.toISOString?.().slice(0, 10) ??
               session.createdAt?.toISOString?.().slice(0, 10) ??

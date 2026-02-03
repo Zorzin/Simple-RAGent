@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import ConfirmButton from "@/components/admin/ConfirmButton";
@@ -22,6 +23,7 @@ type Props = {
 
 export default async function FilesPage({ params, searchParams }: Props) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.files" });
   const { page, limit, offset } = getPageParams((await searchParams).page);
   const query = (await searchParams).q?.trim() ?? "";
   const { sort, dir } = getSortParams((await searchParams).sort, (await searchParams).dir, "name");
@@ -71,25 +73,25 @@ export default async function FilesPage({ params, searchParams }: Props) {
     <div className="space-y-6">
       <Breadcrumbs
         locale={locale}
-        items={[{ label: "Admin", href: "/admin" }, { label: "Files" }]}
+        items={[{ label: t("breadcrumbs.admin"), href: "/admin" }, { label: t("title") }]}
       />
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">Files</h1>
+            <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
             <p className="mt-2 text-sm text-zinc-600">
-              Upload files that will be used for chat context and retrieval.
+              {t("subtitle")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <form className="flex gap-2" method="get">
-              <Input name="q" defaultValue={query} placeholder="Search files" />
+              <Input name="q" defaultValue={query} placeholder={t("searchPlaceholder")} />
               <Button type="submit" variant="outline">
-                Search
+                {t("search")}
               </Button>
             </form>
             <Button asChild>
-              <Link href={`/${locale}/admin/files/new`}>New file</Link>
+              <Link href={`/${locale}/admin/files/new`}>{t("new")}</Link>
             </Button>
           </div>
         </div>
@@ -97,7 +99,7 @@ export default async function FilesPage({ params, searchParams }: Props) {
 
       <Card className="overflow-hidden">
         <div className="border-b border-zinc-200 px-6 py-4">
-          <h3 className="text-sm font-semibold text-zinc-900">Files list</h3>
+          <h3 className="text-sm font-semibold text-zinc-900">{t("listTitle")}</h3>
         </div>
         <div className="overflow-x-auto">
           <table data-admin-table className="w-full border-collapse text-sm">
@@ -110,10 +112,10 @@ export default async function FilesPage({ params, searchParams }: Props) {
                       sort === "name" && dir === "asc" ? "desc" : "asc"
                     }${query ? `&q=${encodeURIComponent(query)}` : ""}`}
                   >
-                    Name
+                    {t("columns.name")}
                   </Link>
                 </th>
-                <th className="px-4 py-3 text-left font-semibold">Type</th>
+                <th className="px-4 py-3 text-left font-semibold">{t("columns.type")}</th>
                 <th className="px-4 py-3 text-left font-semibold">
                   <Link
                     className="hover:text-zinc-900"
@@ -121,33 +123,35 @@ export default async function FilesPage({ params, searchParams }: Props) {
                       sort === "createdAt" && dir === "asc" ? "desc" : "asc"
                     }${query ? `&q=${encodeURIComponent(query)}` : ""}`}
                   >
-                    Created
+                    {t("columns.created")}
                   </Link>
                 </th>
-                <th className="px-4 py-3 text-left font-semibold">Embedding</th>
-                <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                <th className="px-4 py-3 text-left font-semibold">{t("columns.embedding")}</th>
+                <th className="px-4 py-3 text-right font-semibold">{t("columns.actions")}</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
                   <td className="px-4 py-6 text-zinc-500" colSpan={5}>
-                    No files uploaded.
+                    {t("empty")}
                   </td>
                 </tr>
               ) : (
                 rows.map((file) => (
                   <tr key={file.id} className="border-t border-zinc-200">
                     <td className="px-4 py-3 text-zinc-900">{file.name}</td>
-                    <td className="px-4 py-3 text-zinc-500">{file.mimeType ?? "unknown"}</td>
+                    <td className="px-4 py-3 text-zinc-500">
+                      {file.mimeType ?? t("unknownType")}
+                    </td>
                     <td className="px-4 py-3 text-zinc-500">
                       {file.createdAt?.toISOString?.().slice(0, 10) ?? "—"}
                     </td>
                     <td className="px-4 py-3">
                       {Number(file.chunkCount) > 0 ? (
-                        <Badge>Embedded</Badge>
+                        <Badge>{t("embedding.embedded")}</Badge>
                       ) : (
-                        <Badge variant="outline">No embeddings</Badge>
+                        <Badge variant="outline">{t("embedding.none")}</Badge>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -156,24 +160,24 @@ export default async function FilesPage({ params, searchParams }: Props) {
                           href={`/${locale}/admin/files/${file.id}/edit`}
                           className="text-xs font-medium text-zinc-600 hover:text-zinc-900"
                         >
-                          Edit
+                          {t("actions.edit")}
                         </Link>
                         <form action={embedFile}>
                           <input type="hidden" name="id" value={file.id} />
                           <ConfirmButton
                             className="text-xs font-medium text-zinc-600 hover:text-zinc-900"
-                            confirmText="Embed this file now?"
+                            confirmText={t("actions.confirmEmbed")}
                           >
-                            {Number(file.chunkCount) > 0 ? "Re-embed" : "Embed"}
+                            {Number(file.chunkCount) > 0 ? t("actions.reEmbed") : t("actions.embed")}
                           </ConfirmButton>
                         </form>
                         <form action={deleteFile}>
                           <input type="hidden" name="id" value={file.id} />
                           <ConfirmButton
                             className="text-xs font-medium text-red-500 hover:text-red-600"
-                            confirmText="Delete this file?"
+                            confirmText={t("actions.confirmDelete")}
                           >
-                            Delete
+                            {t("actions.delete")}
                           </ConfirmButton>
                         </form>
                       </div>
@@ -187,7 +191,7 @@ export default async function FilesPage({ params, searchParams }: Props) {
         {totalPages > 1 ? (
           <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
             <span>
-              Page {page} of {totalPages}
+              {t("pagination.pageOf", { page, totalPages })}
             </span>
             <div className="flex items-center gap-2">
               <Link
@@ -199,7 +203,7 @@ export default async function FilesPage({ params, searchParams }: Props) {
                   dir,
                 })}`}
               >
-                Prev
+                {t("pagination.prev")}
               </Link>
               <Link
                 className="rounded-md border border-zinc-200 px-2 py-1"
@@ -210,7 +214,7 @@ export default async function FilesPage({ params, searchParams }: Props) {
                   dir,
                 })}`}
               >
-                Next
+                {t("pagination.next")}
               </Link>
             </div>
           </div>

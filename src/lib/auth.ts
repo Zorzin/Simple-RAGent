@@ -12,7 +12,7 @@ export async function requireUser(): Promise<SessionUser> {
   const { userId } = await auth();
 
   if (!userId) {
-    throw new Error("Unauthorized");
+    throw new Error("AUTH_UNAUTHORIZED");
   }
 
   const user = await currentUser();

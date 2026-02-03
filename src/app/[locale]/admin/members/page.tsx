@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import ConfirmButton from "@/components/admin/ConfirmButton";
@@ -19,6 +20,7 @@ type Props = {
 
 export default async function MembersPage({ params, searchParams }: Props) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.members" });
   const { page, limit, offset } = getPageParams((await searchParams).page);
   const query = (await searchParams).q?.trim().toLowerCase() ?? "";
   await requireAdmin();
@@ -40,25 +42,25 @@ export default async function MembersPage({ params, searchParams }: Props) {
     <div className="space-y-6">
       <Breadcrumbs
         locale={locale}
-        items={[{ label: "Admin", href: "/admin" }, { label: "Members" }]}
+        items={[{ label: t("breadcrumbs.admin"), href: "/admin" }, { label: t("title") }]}
       />
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">Members</h1>
+            <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
             <p className="mt-2 text-sm text-zinc-600">
-              Invite teammates and manage their organization role.
+              {t("subtitle")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <form className="flex gap-2" method="get">
-              <Input name="q" defaultValue={query} placeholder="Search members" />
+              <Input name="q" defaultValue={query} placeholder={t("searchPlaceholder")} />
               <Button type="submit" variant="outline">
-                Search
+                {t("search")}
               </Button>
             </form>
             <Button asChild>
-              <Link href={`/${locale}/admin/members/invite`}>Invite member</Link>
+              <Link href={`/${locale}/admin/members/invite`}>{t("invite")}</Link>
             </Button>
           </div>
         </div>
@@ -66,44 +68,48 @@ export default async function MembersPage({ params, searchParams }: Props) {
 
       <Card className="overflow-hidden">
         <div className="border-b border-zinc-200 px-6 py-4">
-          <h3 className="text-sm font-semibold text-zinc-900">Members list</h3>
+          <h3 className="text-sm font-semibold text-zinc-900">{t("listTitle")}</h3>
         </div>
         <div className="overflow-x-auto">
           <table data-admin-table className="w-full border-collapse text-sm">
             <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold">Member</th>
-                <th className="px-4 py-3 text-left font-semibold">Role</th>
-                <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                <th className="px-4 py-3 text-left font-semibold">{t("columns.member")}</th>
+                <th className="px-4 py-3 text-left font-semibold">{t("columns.role")}</th>
+                <th className="px-4 py-3 text-right font-semibold">{t("columns.actions")}</th>
               </tr>
             </thead>
             <tbody>
               {pagedMembers.length === 0 ? (
                 <tr>
                   <td className="px-4 py-6 text-zinc-500" colSpan={3}>
-                    No members yet.
+                    {t("empty")}
                   </td>
                 </tr>
               ) : (
                 pagedMembers.map((membership) => (
                   <tr key={membership.id} className="border-t border-zinc-200">
-                    <td className="px-4 py-3 text-zinc-900">{membership.identifier}</td>
-                    <td className="px-4 py-3 text-zinc-500">{membership.role}</td>
+                    <td className="px-4 py-3 text-zinc-900">
+                      {membership.identifier || t("anonymous")}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-500">
+                      {membership.role === "org:admin" ? t("roles.admin") : t("roles.member")}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
                         <Link
                           href={`/${locale}/admin/members/${membership.id}/edit`}
                           className="text-xs font-medium text-zinc-600 hover:text-zinc-900"
                         >
-                          Edit
+                          {t("actions.edit")}
                         </Link>
                         <form action={deleteMemberRole}>
                           <input type="hidden" name="membershipId" value={membership.id} />
                           <ConfirmButton
                             className="text-xs font-medium text-red-500 hover:text-red-600"
-                            confirmText="Remove this member?"
+                            confirmText={t("actions.confirmRemove")}
                           >
-                            Remove
+                            {t("actions.remove")}
                           </ConfirmButton>
                         </form>
                       </div>
@@ -117,7 +123,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
         {totalPages > 1 ? (
           <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
             <span>
-              Page {page} of {totalPages}
+              {t("pagination.pageOf", { page, totalPages })}
             </span>
             <div className="flex items-center gap-2">
               <Link
@@ -127,7 +133,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
                   q: query || undefined,
                 })}`}
               >
-                Prev
+                {t("pagination.prev")}
               </Link>
               <Link
                 className="rounded-md border border-zinc-200 px-2 py-1"
@@ -136,7 +142,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
                   q: query || undefined,
                 })}`}
               >
-                Next
+                {t("pagination.next")}
               </Link>
             </div>
           </div>
@@ -145,38 +151,40 @@ export default async function MembersPage({ params, searchParams }: Props) {
 
       <Card className="overflow-hidden">
         <div className="border-b border-zinc-200 px-6 py-4">
-          <h3 className="text-sm font-semibold text-zinc-900">Pending invitations</h3>
+          <h3 className="text-sm font-semibold text-zinc-900">{t("pendingTitle")}</h3>
         </div>
         <div className="space-y-2 px-6 py-4 text-sm text-zinc-600">
           {invitations.length === 0 ? (
-            <div>No pending invites.</div>
+            <div>{t("pendingEmpty")}</div>
           ) : (
             invitations.map((invite) => (
               <div key={invite.id} className="flex items-center justify-between">
                 <div>
                   <div className="font-medium text-zinc-900">{invite.emailAddress}</div>
-                  <div className="text-xs text-zinc-500">{invite.role}</div>
+                  <div className="text-xs text-zinc-500">
+                    {invite.role === "org:admin" ? t("roles.admin") : t("roles.member")}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-zinc-400">
-                  <span>Pending</span>
+                  <span>{t("pendingStatus")}</span>
                   <form action={resendInvitation}>
                     <input type="hidden" name="invitationId" value={invite.id} />
                     <input type="hidden" name="emailAddress" value={invite.emailAddress} />
                     <input type="hidden" name="role" value={invite.role} />
                     <ConfirmButton
                       className="text-xs font-medium text-zinc-600 hover:text-zinc-900"
-                      confirmText="Resend this invite?"
+                      confirmText={t("actions.confirmResend")}
                     >
-                      Resend
+                      {t("actions.resend")}
                     </ConfirmButton>
                   </form>
                   <form action={revokeInvitation}>
                     <input type="hidden" name="invitationId" value={invite.id} />
                     <ConfirmButton
                       className="text-xs font-medium text-red-500 hover:text-red-600"
-                      confirmText="Revoke this invite?"
+                      confirmText={t("actions.confirmRevoke")}
                     >
-                      Revoke
+                      {t("actions.revoke")}
                     </ConfirmButton>
                   </form>
                 </div>

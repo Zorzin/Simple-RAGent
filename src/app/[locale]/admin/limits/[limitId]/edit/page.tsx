@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ type Props = {
 
 export default async function EditLimitPage({ params }: Props) {
   const { locale, limitId } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.limitsEdit" });
   await requireAdmin();
   const db = getDb();
   const [limitRow] = await db
@@ -35,19 +37,19 @@ export default async function EditLimitPage({ params }: Props) {
       <Breadcrumbs
         locale={locale}
         items={[
-          { label: "Admin", href: "/admin" },
-          { label: "Limits", href: "/admin/limits" },
-          { label: "Edit" },
+          { label: t("breadcrumbs.admin"), href: "/admin" },
+          { label: t("breadcrumbs.limits"), href: "/admin/limits" },
+          { label: t("breadcrumbs.edit") },
         ]}
       />
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">Edit limit</h1>
-            <p className="mt-2 text-sm text-zinc-600">Update token limit.</p>
+            <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <Button asChild variant="outline">
-            <Link href={`/${locale}/admin/limits`}>Back</Link>
+            <Link href={`/${locale}/admin/limits`}>{t("back")}</Link>
           </Button>
         </div>
       </div>
@@ -55,13 +57,17 @@ export default async function EditLimitPage({ params }: Props) {
       <Card className="space-y-4 p-6">
         <form action={updateTokenLimit} className="space-y-3">
           <input type="hidden" name="id" value={limitRow.id} />
-          <div className="text-xs text-zinc-500">User {limitRow.clerkUserId}</div>
-          <div className="text-xs text-zinc-500">Interval {limitRow.interval}</div>
+          <div className="text-xs text-zinc-500">
+            {t("user", { id: limitRow.clerkUserId })}
+          </div>
+          <div className="text-xs text-zinc-500">
+            {t("intervalLabel", { interval: t(`interval.${limitRow.interval}`) })}
+          </div>
           <Input name="limitTokens" defaultValue={limitRow.limitTokens} />
           <div className="flex items-center gap-2">
-            <Button type="submit">Save changes</Button>
+            <Button type="submit">{t("save")}</Button>
             <Button formAction={deleteTokenLimit} type="submit" variant="destructive">
-              Delete limit
+              {t("delete")}
             </Button>
           </div>
         </form>

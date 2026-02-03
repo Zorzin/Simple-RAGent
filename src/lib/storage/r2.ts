@@ -11,7 +11,7 @@ const accessKeyId = process.env.R2_ACCESS_KEY_ID;
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
 
 if (!bucket || !accountId || !accessKeyId || !secretAccessKey) {
-  throw new Error("R2 credentials are not fully configured");
+  throw new Error("R2_CREDENTIALS_MISSING");
 }
 
 const client = new S3Client({
@@ -94,7 +94,7 @@ export async function downloadFromR2(key: string) {
 
   const response = await client.send(command);
   if (!response.Body) {
-    throw new Error("Missing object body");
+    throw new Error("R2_OBJECT_BODY_MISSING");
   }
 
   const buffer = await streamToBuffer(response.Body as NodeJS.ReadableStream);

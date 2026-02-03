@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ type Props = {
 
 export default async function NewGroupPage({ params }: Props) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.groupsNew" });
   const { organization } = await requireAdmin();
   const db = getDb();
   const memberRows = await db
@@ -29,31 +31,31 @@ export default async function NewGroupPage({ params }: Props) {
       <Breadcrumbs
         locale={locale}
         items={[
-          { label: "Admin", href: "/admin" },
-          { label: "Groups", href: "/admin/groups" },
-          { label: "New" },
+          { label: t("breadcrumbs.admin"), href: "/admin" },
+          { label: t("breadcrumbs.groups"), href: "/admin/groups" },
+          { label: t("breadcrumbs.new") },
         ]}
       />
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">New group</h1>
-            <p className="mt-2 text-sm text-zinc-600">Create a new member group.</p>
+            <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <Button asChild variant="outline">
-            <Link href={`/${locale}/admin/groups`}>Back</Link>
+            <Link href={`/${locale}/admin/groups`}>{t("back")}</Link>
           </Button>
         </div>
       </div>
 
       <Card className="space-y-4 p-6">
         <form action={createGroup} className="space-y-4">
-          <Input name="name" placeholder="Group name" required />
+          <Input name="name" placeholder={t("namePlaceholder")} required />
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-zinc-500">Assign members</div>
+            <div className="text-xs font-semibold text-zinc-500">{t("assignMembers")}</div>
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
               {memberRows.length === 0 ? (
-                <div className="text-zinc-500">No members yet.</div>
+                <div className="text-zinc-500">{t("noMembers")}</div>
               ) : (
                 memberRows.map((member) => (
                   <label key={member.id} className="flex items-center gap-2 py-1">
@@ -66,7 +68,7 @@ export default async function NewGroupPage({ params }: Props) {
               )}
             </div>
           </div>
-          <Button type="submit">Create group</Button>
+          <Button type="submit">{t("submit")}</Button>
         </form>
       </Card>
     </div>

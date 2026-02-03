@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ type Props = {
 
 export default async function NewLimitPage({ params }: Props) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.limitsNew" });
   await requireAdmin();
   const { orgId } = await auth();
   const memberships = orgId ? await fetchOrgMemberships(orgId) : [];
@@ -25,19 +27,19 @@ export default async function NewLimitPage({ params }: Props) {
       <Breadcrumbs
         locale={locale}
         items={[
-          { label: "Admin", href: "/admin" },
-          { label: "Limits", href: "/admin/limits" },
-          { label: "New" },
+          { label: t("breadcrumbs.admin"), href: "/admin" },
+          { label: t("breadcrumbs.limits"), href: "/admin/limits" },
+          { label: t("breadcrumbs.new") },
         ]}
       />
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">New token limit</h1>
-            <p className="mt-2 text-sm text-zinc-600">Create a token limit rule.</p>
+            <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <Button asChild variant="outline">
-            <Link href={`/${locale}/admin/limits`}>Back</Link>
+            <Link href={`/${locale}/admin/limits`}>{t("back")}</Link>
           </Button>
         </div>
       </div>
@@ -51,7 +53,7 @@ export default async function NewLimitPage({ params }: Props) {
           >
             {memberships.map((membership) => (
               <option key={membership.id} value={membership.userId}>
-                {membership.identifier}
+                {membership.identifier || t("anonymous")}
               </option>
             ))}
           </select>
@@ -60,12 +62,12 @@ export default async function NewLimitPage({ params }: Props) {
             className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
             required
           >
-            <option value="day">Per day</option>
-            <option value="week">Per week</option>
-            <option value="month">Per month</option>
+            <option value="day">{t("interval.day")}</option>
+            <option value="week">{t("interval.week")}</option>
+            <option value="month">{t("interval.month")}</option>
           </select>
-          <Input name="limitTokens" type="number" placeholder="Limit tokens" required />
-          <Button type="submit">Save limit</Button>
+          <Input name="limitTokens" type="number" placeholder={t("limitPlaceholder")} required />
+          <Button type="submit">{t("submit")}</Button>
         </form>
       </Card>
     </div>

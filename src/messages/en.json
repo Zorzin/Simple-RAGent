@@ -10,5 +10,537 @@
     "feature3": "LLM connectors per chat with API key support",
     "feature4": "Token limits by day, week, month",
     "comingSoon": "Scaffolded foundation. Core flows and integrations are next."
+  },
+  "app": {
+    "chat": {
+      "sendError": "Unable to send message.",
+      "empty": "No messages yet.",
+      "placeholder": "Ask a question...",
+      "sending": "Sending...",
+      "send": "Send",
+      "roleUser": "User",
+      "roleAssistant": "Assistant",
+      "fallbackWithContext": "I found relevant context:\n\n{context}\n\nConnect a model to get a full answer.",
+      "fallbackNoModel": "No model connected yet. Connect a model to reply.",
+      "unsupportedProvider": "Connected provider is not supported for streaming yet."
+    },
+    "sidebar": {
+      "workspace": "Workspace",
+      "noChatsAvailable": "No chats available",
+      "createChat": "Create chat",
+      "startNewChatTitle": "Start a new chat",
+      "startNewChatDescription": "Choose the chat type (files, access rules, limits) you want to use.",
+      "chatType": "Chat type",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "startChat": "Start chat",
+      "history": "History",
+      "noChatsYet": "No chats yet. Start a new one.",
+      "createError": "Unable to create chat session.",
+      "newChatTitle": "New chat"
+    },
+    "errors": {
+      "unauthorized": "You need to sign in to continue.",
+      "invalidPayload": "The request was not valid. Please try again.",
+      "chatRequired": "Select a chat to continue.",
+      "chatNotFound": "The selected chat could not be found.",
+      "sessionNotFound": "Chat session not found.",
+      "missingApiKey": "The selected connector is missing an API key.",
+      "tokenLimit": "Token limit exceeded. Try again later."
+    },
+    "prompts": {
+      "system": "You are a company assistant. Use the provided context when relevant. If context is missing, answer normally and mention uncertainty.\n\nContext:\n{context}",
+      "noContext": "No relevant context.",
+      "titlePrompt": "Create a short, descriptive chat title (3-6 words). Return only the title.\n\nUser: {user}\nAssistant: {assistant}",
+      "titleSystem": "You are a helpful assistant that writes concise chat titles."
+    }
+  },
+  "admin": {
+    "layout": {
+      "title": "Admin Panel",
+      "subtitle": "Manage your company workspace",
+      "singleOrg": "Single organization mode",
+      "nav": {
+        "overview": "Overview",
+        "chats": "Chats",
+        "files": "Files",
+        "groups": "Groups",
+        "members": "Members",
+        "connectors": "Connectors",
+        "limits": "Limits"
+      }
+    },
+    "overview": {
+      "title": "Admin Panel",
+      "welcome": "Welcome back, {name}. Select a section to manage your workspace.",
+      "fallbackName": "admin",
+      "links": {
+        "chats": {
+          "title": "Chats",
+          "desc": "Create and organize chat rooms."
+        },
+        "files": {
+          "title": "Files",
+          "desc": "Upload and manage knowledge files."
+        },
+        "groups": {
+          "title": "Groups",
+          "desc": "Control member access by groups."
+        },
+        "members": {
+          "title": "Members",
+          "desc": "Invite and manage membership roles."
+        },
+        "connectors": {
+          "title": "Connectors",
+          "desc": "Configure Claude, OpenAI, Copilot."
+        },
+        "limits": {
+          "title": "Limits",
+          "desc": "Set daily, weekly, monthly usage caps."
+        }
+      }
+    },
+    "error": {
+      "fallbackMessage": "Something went wrong.",
+      "accessTitle": "Admin access required",
+      "genericTitle": "Something went wrong",
+      "accessDescription": "You don’t have permission to view this page.",
+      "genericDescription": "Please try again or return to the workspace.",
+      "signIn": "Sign in with another account",
+      "goToWorkspace": "Go to workspace"
+    },
+    "connectors": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Connectors",
+      "subtitle": "Configure model providers for your chats. Store API keys securely.",
+      "searchPlaceholder": "Search connectors",
+      "search": "Search",
+      "new": "New connector",
+      "listTitle": "Connectors list",
+      "columns": {
+        "name": "Name",
+        "provider": "Provider",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "empty": "No connectors yet.",
+      "defaultModel": "default",
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "confirmDelete": "Delete this connector?"
+      },
+      "pagination": {
+        "pageOf": "Page {page} of {totalPages}",
+        "prev": "Prev",
+        "next": "Next"
+      }
+    },
+    "connectorsNew": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "connectors": "Connectors",
+        "new": "New"
+      },
+      "title": "New connector",
+      "subtitle": "Add a new model connector.",
+      "back": "Back",
+      "submit": "Add connector"
+    },
+    "connectorsEdit": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "connectors": "Connectors",
+        "edit": "Edit"
+      },
+      "title": "Edit connector",
+      "subtitle": "Update connector details.",
+      "back": "Back",
+      "save": "Save changes",
+      "delete": "Delete connector"
+    },
+    "connectorFields": {
+      "providers": {
+        "anthropic": "Anthropic (Claude)",
+        "openai": "OpenAI",
+        "copilot": "GitHub Copilot",
+        "azureOpenai": "Azure OpenAI",
+        "mistral": "Mistral",
+        "custom": "Custom"
+      },
+      "fields": {
+        "namePlaceholder": "Connector name",
+        "providerLabel": "Provider",
+        "modelLabel": "Model",
+        "modelPlaceholder": "Model (optional)",
+        "copilotToken": "GitHub token (with Copilot access)",
+        "apiKeyPlaceholder": "API key (optional)"
+      },
+      "modelErrors": {
+        "missingKey": "Add an API key to load models.",
+        "loadFailed": "Unable to load models."
+      },
+      "actions": {
+        "loadingModels": "Loading models...",
+        "loadModels": "Load models"
+      },
+      "copilot": {
+        "authorize": "Authorize Copilot (coming soon)",
+        "helper": "For now paste a GitHub token with Copilot access."
+      }
+    },
+    "limits": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Token limits",
+      "subtitle": "Define daily, weekly, or monthly caps for each member.",
+      "searchPlaceholder": "Search member name",
+      "search": "Search",
+      "new": "New limit",
+      "listTitle": "Existing limits",
+      "columns": {
+        "user": "User",
+        "interval": "Interval",
+        "limit": "Limit",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "empty": "No limits configured.",
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "confirmDelete": "Delete this limit?"
+      },
+      "pagination": {
+        "pageOf": "Page {page} of {totalPages}",
+        "prev": "Prev",
+        "next": "Next"
+      }
+    },
+    "limitsNew": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "limits": "Limits",
+        "new": "New"
+      },
+      "title": "New token limit",
+      "subtitle": "Create a token limit rule.",
+      "back": "Back",
+      "interval": {
+        "day": "Per day",
+        "week": "Per week",
+        "month": "Per month"
+      },
+      "limitPlaceholder": "Limit tokens",
+      "submit": "Save limit",
+      "anonymous": "Unknown member"
+    },
+    "limitsEdit": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "limits": "Limits",
+        "edit": "Edit"
+      },
+      "title": "Edit limit",
+      "subtitle": "Update token limit.",
+      "back": "Back",
+      "user": "User {id}",
+      "interval": {
+        "day": "Per day",
+        "week": "Per week",
+        "month": "Per month"
+      },
+      "save": "Save changes",
+      "delete": "Delete limit",
+      "intervalLabel": "Interval: {interval}"
+    },
+    "groups": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Groups",
+      "subtitle": "Organize members into groups to control chat access.",
+      "searchPlaceholder": "Search groups",
+      "search": "Search",
+      "new": "New group",
+      "listTitle": "Groups list",
+      "columns": {
+        "name": "Name",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "empty": "No groups yet.",
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "confirmDelete": "Delete this group?"
+      },
+      "pagination": {
+        "pageOf": "Page {page} of {totalPages}",
+        "prev": "Prev",
+        "next": "Next"
+      }
+    },
+    "groupsNew": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "groups": "Groups",
+        "new": "New"
+      },
+      "title": "New group",
+      "subtitle": "Create a new member group.",
+      "back": "Back",
+      "namePlaceholder": "Group name",
+      "assignMembers": "Assign members",
+      "noMembers": "No members yet.",
+      "submit": "Create group"
+    },
+    "groupsEdit": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "groups": "Groups",
+        "edit": "Edit"
+      },
+      "title": "Edit group",
+      "subtitle": "Update group details.",
+      "back": "Back",
+      "assignMembers": "Assign members",
+      "noMembers": "No members yet.",
+      "save": "Save changes",
+      "delete": "Delete group"
+    },
+    "files": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Files",
+      "subtitle": "Upload files that will be used for chat context and retrieval.",
+      "searchPlaceholder": "Search files",
+      "search": "Search",
+      "new": "New file",
+      "listTitle": "Files list",
+      "columns": {
+        "name": "Name",
+        "type": "Type",
+        "created": "Created",
+        "embedding": "Embedding",
+        "actions": "Actions"
+      },
+      "empty": "No files uploaded.",
+      "unknownType": "unknown",
+      "embedding": {
+        "embedded": "Embedded",
+        "none": "No embeddings"
+      },
+      "actions": {
+        "edit": "Edit",
+        "embed": "Embed",
+        "reEmbed": "Re-embed",
+        "confirmEmbed": "Embed this file now?",
+        "delete": "Delete",
+        "confirmDelete": "Delete this file?"
+      },
+      "pagination": {
+        "pageOf": "Page {page} of {totalPages}",
+        "prev": "Prev",
+        "next": "Next"
+      }
+    },
+    "filesNew": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "files": "Files",
+        "new": "New"
+      },
+      "title": "New file",
+      "subtitle": "Upload a new file.",
+      "back": "Back"
+    },
+    "filesEdit": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "files": "Files",
+        "edit": "Edit"
+      },
+      "title": "Edit file",
+      "subtitle": "Rename or remove this file.",
+      "back": "Back",
+      "unknownType": "unknown",
+      "bytes": "bytes",
+      "save": "Save changes",
+      "delete": "Delete file"
+    },
+    "upload": {
+      "successTitle": "Upload complete",
+      "successMessage": "Uploaded {count} {files}. Upload another?",
+      "uploadMore": "Upload more",
+      "backToList": "Back to list",
+      "dropzoneTitle": "Drag and drop files here",
+      "dropzoneHint": "or click to browse. Multiple files supported.",
+      "browse": "Browse files",
+      "selected": "{count} {files} selected: {names}",
+      "submit": "Upload files",
+      "fileSingular": "file",
+      "filePlural": "files"
+    },
+    "members": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Members",
+      "subtitle": "Invite teammates and manage their organization role.",
+      "searchPlaceholder": "Search members",
+      "search": "Search",
+      "invite": "Invite member",
+      "listTitle": "Members list",
+      "columns": {
+        "member": "Member",
+        "role": "Role",
+        "actions": "Actions"
+      },
+      "empty": "No members yet.",
+      "actions": {
+        "edit": "Edit",
+        "remove": "Remove",
+        "confirmRemove": "Remove this member?",
+        "resend": "Resend",
+        "confirmResend": "Resend this invite?",
+        "revoke": "Revoke",
+        "confirmRevoke": "Revoke this invite?"
+      },
+      "pagination": {
+        "pageOf": "Page {page} of {totalPages}",
+        "prev": "Prev",
+        "next": "Next"
+      },
+      "pendingTitle": "Pending invitations",
+      "pendingEmpty": "No pending invites.",
+      "pendingStatus": "Pending",
+      "anonymous": "Unknown member"
+    },
+    "membersInvite": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "members": "Members",
+        "invite": "Invite"
+      },
+      "title": "Invite member",
+      "subtitle": "Send an organization invite.",
+      "back": "Back"
+    },
+    "inviteForm": {
+      "successTitle": "Invite sent",
+      "successMessage": "The invitation was sent successfully. Would you like to invite another member?",
+      "inviteAnother": "Invite another",
+      "backToList": "Back to list",
+      "emailPlaceholder": "Email address",
+      "roles": {
+        "member": "Member",
+        "admin": "Admin"
+      },
+      "submit": "Send invite"
+    },
+    "membersEdit": {
+      "notFound": "Member not found",
+      "breadcrumbs": {
+        "admin": "Admin",
+        "members": "Members",
+        "edit": "Edit"
+      },
+      "title": "Edit member",
+      "subtitle": "Update member role.",
+      "back": "Back",
+      "roles": {
+        "member": "Member",
+        "admin": "Admin"
+      },
+      "updateRole": "Update role",
+      "remove": "Remove member",
+      "anonymous": "Unknown member"
+    },
+    "chats": {
+      "breadcrumbs": {
+        "admin": "Admin"
+      },
+      "title": "Chats",
+      "subtitle": "Create chat rooms and define their scope, files, access groups, and limits.",
+      "searchPlaceholder": "Search chats",
+      "search": "Search",
+      "new": "New chat",
+      "listTitle": "Chats list",
+      "columns": {
+        "name": "Name",
+        "description": "Description",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "empty": "No chats yet.",
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "confirmDelete": "Delete this chat?"
+      },
+      "pagination": {
+        "pageOf": "Page {page} of {totalPages}",
+        "prev": "Prev",
+        "next": "Next"
+      }
+    },
+    "chatsNew": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "chats": "Chats",
+        "new": "New"
+      },
+      "title": "New chat",
+      "subtitle": "Create a new chat room.",
+      "back": "Back",
+      "fields": {
+        "namePlaceholder": "Chat name",
+        "descriptionPlaceholder": "Description (optional)",
+        "assignGroups": "Assign groups",
+        "noGroups": "No groups yet.",
+        "assignFiles": "Assign files",
+        "noFiles": "No files yet.",
+        "connector": "Connector",
+        "noConnector": "No connector"
+      },
+      "limits": {
+        "day": "Daily limit",
+        "week": "Weekly limit",
+        "month": "Monthly limit",
+        "example": "e.g. 20000"
+      },
+      "submit": "Create chat"
+    },
+    "chatsEdit": {
+      "breadcrumbs": {
+        "admin": "Admin",
+        "chats": "Chats",
+        "edit": "Edit"
+      },
+      "title": "Edit chat",
+      "subtitle": "Update chat details.",
+      "back": "Back",
+      "fields": {
+        "assignGroups": "Assign groups",
+        "noGroups": "No groups yet.",
+        "assignFiles": "Assign files",
+        "noFiles": "No files yet.",
+        "connector": "Connector",
+        "noConnector": "No connector"
+      },
+      "limits": {
+        "day": "Daily limit",
+        "week": "Weekly limit",
+        "month": "Monthly limit"
+      },
+      "save": "Save changes",
+      "delete": "Delete chat"
+    }
   }
 }

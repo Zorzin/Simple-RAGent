@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ type Props = {
 
 export default async function EditGroupPage({ params }: Props) {
   const { locale, groupId } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.groupsEdit" });
   const { organization } = await requireAdmin();
   const db = getDb();
   const [group] = await db.select().from(groups).where(eq(groups.id, groupId)).limit(1);
@@ -40,19 +42,19 @@ export default async function EditGroupPage({ params }: Props) {
       <Breadcrumbs
         locale={locale}
         items={[
-          { label: "Admin", href: "/admin" },
-          { label: "Groups", href: "/admin/groups" },
-          { label: "Edit" },
+          { label: t("breadcrumbs.admin"), href: "/admin" },
+          { label: t("breadcrumbs.groups"), href: "/admin/groups" },
+          { label: t("breadcrumbs.edit") },
         ]}
       />
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">Edit group</h1>
-            <p className="mt-2 text-sm text-zinc-600">Update group details.</p>
+            <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <Button asChild variant="outline">
-            <Link href={`/${locale}/admin/groups`}>Back</Link>
+            <Link href={`/${locale}/admin/groups`}>{t("back")}</Link>
           </Button>
         </div>
       </div>
@@ -62,10 +64,10 @@ export default async function EditGroupPage({ params }: Props) {
           <input type="hidden" name="id" value={group.id} />
           <Input name="name" defaultValue={group.name} required />
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-zinc-500">Assign members</div>
+            <div className="text-xs font-semibold text-zinc-500">{t("assignMembers")}</div>
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
               {memberRows.length === 0 ? (
-                <div className="text-zinc-500">No members yet.</div>
+                <div className="text-zinc-500">{t("noMembers")}</div>
               ) : (
                 memberRows.map((member) => (
                   <label key={member.id} className="flex items-center gap-2 py-1">
@@ -84,9 +86,9 @@ export default async function EditGroupPage({ params }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button type="submit">Save changes</Button>
+            <Button type="submit">{t("save")}</Button>
             <Button formAction={deleteGroup} type="submit" variant="destructive">
-              Delete group
+              {t("delete")}
             </Button>
           </div>
         </form>

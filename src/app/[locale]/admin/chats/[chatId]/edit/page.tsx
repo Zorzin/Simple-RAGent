@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ type Props = {
 
 export default async function EditChatPage({ params }: Props) {
   const { locale, chatId } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.chatsEdit" });
   const { organization } = await requireAdmin();
   const db = getDb();
   const [chat] = await db.select().from(chats).where(eq(chats.id, chatId)).limit(1);
@@ -67,19 +69,19 @@ export default async function EditChatPage({ params }: Props) {
       <Breadcrumbs
         locale={locale}
         items={[
-          { label: "Admin", href: "/admin" },
-          { label: "Chats", href: "/admin/chats" },
-          { label: "Edit" },
+          { label: t("breadcrumbs.admin"), href: "/admin" },
+          { label: t("breadcrumbs.chats"), href: "/admin/chats" },
+          { label: t("breadcrumbs.edit") },
         ]}
       />
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">Edit chat</h1>
-            <p className="mt-2 text-sm text-zinc-600">Update chat details.</p>
+            <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <Button asChild variant="outline">
-            <Link href={`/${locale}/admin/chats`}>Back</Link>
+            <Link href={`/${locale}/admin/chats`}>{t("back")}</Link>
           </Button>
         </div>
       </div>
@@ -90,10 +92,10 @@ export default async function EditChatPage({ params }: Props) {
           <Input name="name" defaultValue={chat.name} required />
           <Textarea name="description" defaultValue={chat.description ?? ""} />
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-zinc-500">Assign groups</div>
+            <div className="text-xs font-semibold text-zinc-500">{t("fields.assignGroups")}</div>
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
               {groupRows.length === 0 ? (
-                <div className="text-zinc-500">No groups yet.</div>
+                <div className="text-zinc-500">{t("fields.noGroups")}</div>
               ) : (
                 groupRows.map((group) => (
                   <label key={group.id} className="flex items-center gap-2 py-1">
@@ -110,10 +112,10 @@ export default async function EditChatPage({ params }: Props) {
             </div>
           </div>
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-zinc-500">Assign files</div>
+            <div className="text-xs font-semibold text-zinc-500">{t("fields.assignFiles")}</div>
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
               {fileRows.length === 0 ? (
-                <div className="text-zinc-500">No files yet.</div>
+                <div className="text-zinc-500">{t("fields.noFiles")}</div>
               ) : (
                 fileRows.map((file) => (
                   <label key={file.id} className="flex items-center gap-2 py-1">
@@ -130,13 +132,13 @@ export default async function EditChatPage({ params }: Props) {
             </div>
           </div>
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-zinc-500">Connector</div>
+            <div className="text-xs font-semibold text-zinc-500">{t("fields.connector")}</div>
             <select
               name="connectorId"
               className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
               defaultValue={connectorId}
             >
-              <option value="">No connector</option>
+              <option value="">{t("fields.noConnector")}</option>
               {connectorRows.map((connector) => (
                 <option key={connector.id} value={connector.id}>
                   {connector.name} ({connector.provider})
@@ -146,22 +148,22 @@ export default async function EditChatPage({ params }: Props) {
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500">Daily limit</label>
+              <label className="text-xs font-semibold text-zinc-500">{t("limits.day")}</label>
               <Input name="limitDay" type="number" min="0" defaultValue={limitDay} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500">Weekly limit</label>
+              <label className="text-xs font-semibold text-zinc-500">{t("limits.week")}</label>
               <Input name="limitWeek" type="number" min="0" defaultValue={limitWeek} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500">Monthly limit</label>
+              <label className="text-xs font-semibold text-zinc-500">{t("limits.month")}</label>
               <Input name="limitMonth" type="number" min="0" defaultValue={limitMonth} />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button type="submit">Save changes</Button>
+            <Button type="submit">{t("save")}</Button>
             <Button formAction={deleteChat} type="submit" variant="destructive">
-              Delete chat
+              {t("delete")}
             </Button>
           </div>
         </form>

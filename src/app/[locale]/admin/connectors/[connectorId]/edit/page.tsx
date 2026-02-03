@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ type Props = {
 
 export default async function EditConnectorPage({ params }: Props) {
   const { locale, connectorId } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.connectorsEdit" });
   await requireAdmin();
   const db = getDb();
   const [connector] = await db
@@ -35,19 +37,19 @@ export default async function EditConnectorPage({ params }: Props) {
       <Breadcrumbs
         locale={locale}
         items={[
-          { label: "Admin", href: "/admin" },
-          { label: "Connectors", href: "/admin/connectors" },
-          { label: "Edit" },
+          { label: t("breadcrumbs.admin"), href: "/admin" },
+          { label: t("breadcrumbs.connectors"), href: "/admin/connectors" },
+          { label: t("breadcrumbs.edit") },
         ]}
       />
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">Edit connector</h1>
-            <p className="mt-2 text-sm text-zinc-600">Update connector details.</p>
+            <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <Button asChild variant="outline">
-            <Link href={`/${locale}/admin/connectors`}>Back</Link>
+            <Link href={`/${locale}/admin/connectors`}>{t("back")}</Link>
           </Button>
         </div>
       </div>
@@ -61,9 +63,9 @@ export default async function EditConnectorPage({ params }: Props) {
             initialModel={connector.model ?? ""}
           />
           <div className="flex items-center gap-2">
-            <Button type="submit">Save changes</Button>
+            <Button type="submit">{t("save")}</Button>
             <Button formAction={deleteConnector} type="submit" variant="destructive">
-              Delete connector
+              {t("delete")}
             </Button>
           </div>
         </form>

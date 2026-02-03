@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
+import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import ConfirmButton from "@/components/admin/ConfirmButton";
@@ -21,6 +22,7 @@ type Props = {
 
 export default async function LimitsPage({ params, searchParams }: Props) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.limits" });
   const { page, limit, offset } = getPageParams((await searchParams).page);
   const query = (await searchParams).q?.trim() ?? "";
   const { sort, dir } = getSortParams(
@@ -81,25 +83,25 @@ export default async function LimitsPage({ params, searchParams }: Props) {
     <div className="space-y-6">
       <Breadcrumbs
         locale={locale}
-        items={[{ label: "Admin", href: "/admin" }, { label: "Limits" }]}
+        items={[{ label: t("breadcrumbs.admin"), href: "/admin" }, { label: t("title") }]}
       />
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">Token limits</h1>
+            <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
             <p className="mt-2 text-sm text-zinc-600">
-              Define daily, weekly, or monthly caps for each member.
+              {t("subtitle")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <form className="flex gap-2" method="get">
-              <Input name="q" defaultValue={query} placeholder="Search member name" />
+              <Input name="q" defaultValue={query} placeholder={t("searchPlaceholder")} />
               <Button type="submit" variant="outline">
-                Search
+                {t("search")}
               </Button>
             </form>
             <Button asChild>
-              <Link href={`/${locale}/admin/limits/new`}>New limit</Link>
+              <Link href={`/${locale}/admin/limits/new`}>{t("new")}</Link>
             </Button>
           </div>
         </div>
@@ -107,14 +109,14 @@ export default async function LimitsPage({ params, searchParams }: Props) {
 
       <Card className="overflow-hidden">
         <div className="border-b border-zinc-200 px-6 py-4">
-          <h3 className="text-sm font-semibold text-zinc-900">Existing limits</h3>
+          <h3 className="text-sm font-semibold text-zinc-900">{t("listTitle")}</h3>
         </div>
         <div className="overflow-x-auto">
           <table data-admin-table className="w-full border-collapse text-sm">
             <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold">User</th>
-                <th className="px-4 py-3 text-left font-semibold">Interval</th>
+                <th className="px-4 py-3 text-left font-semibold">{t("columns.user")}</th>
+                <th className="px-4 py-3 text-left font-semibold">{t("columns.interval")}</th>
                 <th className="px-4 py-3 text-left font-semibold">
                   <Link
                     className="hover:text-zinc-900"
@@ -122,7 +124,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
                       sort === "limitTokens" && dir === "asc" ? "desc" : "asc"
                     }${query ? `&q=${encodeURIComponent(query)}` : ""}`}
                   >
-                    Limit
+                    {t("columns.limit")}
                   </Link>
                 </th>
                 <th className="px-4 py-3 text-left font-semibold">
@@ -132,17 +134,17 @@ export default async function LimitsPage({ params, searchParams }: Props) {
                       sort === "createdAt" && dir === "asc" ? "desc" : "asc"
                     }${query ? `&q=${encodeURIComponent(query)}` : ""}`}
                   >
-                    Created
+                    {t("columns.created")}
                   </Link>
                 </th>
-                <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                <th className="px-4 py-3 text-right font-semibold">{t("columns.actions")}</th>
               </tr>
             </thead>
             <tbody>
               {limitRows.length === 0 ? (
                 <tr>
                   <td className="px-4 py-6 text-zinc-500" colSpan={5}>
-                    No limits configured.
+                    {t("empty")}
                   </td>
                 </tr>
               ) : (
@@ -151,7 +153,9 @@ export default async function LimitsPage({ params, searchParams }: Props) {
                     <td className="px-4 py-3 text-zinc-900">
                       {limitRow.displayName ?? limitRow.email ?? limitRow.clerkUserId}
                     </td>
-                    <td className="px-4 py-3 text-zinc-500">{limitRow.interval}</td>
+                    <td className="px-4 py-3 text-zinc-500">
+                      {t(`interval.${limitRow.interval}`)}
+                    </td>
                     <td className="px-4 py-3 text-zinc-500">{limitRow.limitTokens}</td>
                     <td className="px-4 py-3 text-zinc-500">
                       {limitRow.createdAt?.toISOString?.().slice(0, 10) ?? "—"}
@@ -162,15 +166,15 @@ export default async function LimitsPage({ params, searchParams }: Props) {
                           href={`/${locale}/admin/limits/${limitRow.id}/edit`}
                           className="text-xs font-medium text-zinc-600 hover:text-zinc-900"
                         >
-                          Edit
+                          {t("actions.edit")}
                         </Link>
                         <form action={deleteTokenLimit}>
                           <input type="hidden" name="id" value={limitRow.id} />
                           <ConfirmButton
                             className="text-xs font-medium text-red-500 hover:text-red-600"
-                            confirmText="Delete this limit?"
+                            confirmText={t("actions.confirmDelete")}
                           >
-                            Delete
+                            {t("actions.delete")}
                           </ConfirmButton>
                         </form>
                       </div>
@@ -184,7 +188,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
         {totalPages > 1 ? (
           <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
             <span>
-              Page {page} of {totalPages}
+              {t("pagination.pageOf", { page, totalPages })}
             </span>
             <div className="flex items-center gap-2">
               <Link
@@ -196,7 +200,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
                   dir,
                 })}`}
               >
-                Prev
+                {t("pagination.prev")}
               </Link>
               <Link
                 className="rounded-md border border-zinc-200 px-2 py-1"
@@ -207,7 +211,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
                   dir,
                 })}`}
               >
-                Next
+                {t("pagination.next")}
               </Link>
             </div>
           </div>

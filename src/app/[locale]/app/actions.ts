@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { getTranslations } from "next-intl/server";
 
 import { eq } from "drizzle-orm";
 
@@ -18,13 +19,19 @@ import { getTokenLimitStatus } from "@/lib/token-limits";
 const sendSchema = z.object({
   sessionId: z.string().uuid(),
   content: z.string().min(1),
+  locale: z.string().optional(),
 });
 
 export async function sendMessage(formData: FormData) {
   const data = sendSchema.parse({
     sessionId: formData.get("sessionId"),
     content: formData.get("content"),
+    locale: formData.get("locale") ?? undefined,
   });
+
+  const locale = data.locale || "en";
+  const tChat = await getTranslations({ locale, namespace: "app.chat" });
+  const tPrompts = await getTranslations({ locale, namespace: "app.prompts" });
 
   const db = getDb();
   const { organization, member } = await getOrCreateMember();
@@ -37,13 +44,13 @@ export async function sendMessage(formData: FormData) {
     .limit(1);
 
   if (!session) {
-    throw new Error("Chat session not found");
+    throw new Error("CHAT_SESSION_NOT_FOUND");
   }
 
   const [chat] = await db.select().from(chats).where(eq(chats.id, session.chatId));
 
   if (!chat || chat.organizationId !== organization.id) {
-    throw new Error("Chat not found");
+    throw new Error("CHAT_NOT_FOUND");
   }
 
   const fileRows = await db
@@ -57,6 +64,7 @@ export async function sendMessage(formData: FormData) {
     : [];
 
   const context = retrieved.map((chunk, index) => `#${index + 1}: ${chunk.content}`).join("\n\n");
+  const contextText = context || tPrompts("noContext");
 
   const connectorRows = await db
     .select({
@@ -84,7 +92,7 @@ export async function sendMessage(formData: FormData) {
     availableConnectors.find((row) => row.provider === "copilot") ||
     availableConnectors[0];
 
-  const systemPrompt = `You are a company assistant. Use the provided context when relevant. If context is missing, answer normally and mention uncertainty.\n\nContext:\n${context || "No relevant context."}`;
+  const systemPrompt = tPrompts("system", { context: contextText });
   const maxOutputTokens = 800;
   const promptTokens = estimateTokens(`${systemPrompt}\n\n${data.content}`);
 
@@ -98,7 +106,7 @@ export async function sendMessage(formData: FormData) {
           : (connector?.apiKey ?? null);
 
   if (connector?.provider && !resolvedApiKey) {
-    throw new Error("Selected connector is missing an API key.");
+    throw new Error("MISSING_CONNECTOR_API_KEY");
   }
 
   const limitStatus = await getTokenLimitStatus({
@@ -110,7 +118,7 @@ export async function sendMessage(formData: FormData) {
   });
 
   if (limitStatus.blocked) {
-    throw new Error("Token limit exceeded");
+    throw new Error("TOKEN_LIMIT_EXCEEDED");
   }
 
   const assistantReply = connector?.provider
@@ -123,8 +131,8 @@ export async function sendMessage(formData: FormData) {
         maxOutputTokens,
       })
     : context
-      ? `I found relevant context:\n\n${context}\n\nConnect a model to get a full answer.`
-      : "No model connected yet. Connect a model to reply.";
+      ? tChat("fallbackWithContext", { context })
+      : tChat("fallbackNoModel");
 
   await safeInsertMessage({
     chatId: chat.id,

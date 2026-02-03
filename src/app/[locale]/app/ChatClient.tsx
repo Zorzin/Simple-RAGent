@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,10 +14,13 @@ export type ChatMessage = {
 
 type Props = {
   sessionId: string;
+  locale: string;
   initialMessages: ChatMessage[];
 };
 
-export default function ChatClient({ sessionId, initialMessages }: Props) {
+export default function ChatClient({ sessionId, locale, initialMessages }: Props) {
+  const t = useTranslations("app.chat");
+  const tErrors = useTranslations("app.errors");
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -47,15 +51,15 @@ export default function ChatClient({ sessionId, initialMessages }: Props) {
     const response = await fetch("/api/chat/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId, content: trimmed }),
+      body: JSON.stringify({ sessionId, content: trimmed, locale }),
     });
 
     if (!response.ok) {
-      let errorMessage = "Unable to send message.";
+      let errorMessage = t("sendError");
       try {
-        const data = (await response.json()) as { error?: string };
-        if (data?.error) {
-          errorMessage = data.error;
+        const data = (await response.json()) as { errorCode?: string };
+        if (data?.errorCode) {
+          errorMessage = tErrors(data.errorCode);
         }
       } catch {
         // ignore parsing error
@@ -111,7 +115,7 @@ export default function ChatClient({ sessionId, initialMessages }: Props) {
     <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
       <div className="flex-1 space-y-3 overflow-y-auto p-6">
         {messages.length === 0 ? (
-          <div className="text-sm text-zinc-500">No messages yet.</div>
+          <div className="text-sm text-zinc-500">{t("empty")}</div>
         ) : (
           messages.map((message) => (
             <div
@@ -122,7 +126,9 @@ export default function ChatClient({ sessionId, initialMessages }: Props) {
                   : "rounded-lg border border-zinc-200 bg-white p-3 text-sm"
               }
             >
-              <div className="text-xs uppercase text-zinc-400">{message.role}</div>
+              <div className="text-xs uppercase text-zinc-400">
+                {message.role === "user" ? t("roleUser") : t("roleAssistant")}
+              </div>
               <div className="mt-1 whitespace-pre-wrap text-zinc-800">{message.content}</div>
             </div>
           ))
@@ -134,12 +140,12 @@ export default function ChatClient({ sessionId, initialMessages }: Props) {
           <Textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask a question..."
+            placeholder={t("placeholder")}
             rows={3}
             className="flex-1"
           />
           <Button type="submit" disabled={isSending} className="h-10">
-            {isSending ? "Sending..." : "Send"}
+            {isSending ? t("sending") : t("send")}
           </Button>
         </div>
       </form>

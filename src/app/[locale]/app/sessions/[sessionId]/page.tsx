@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default async function ChatSessionPage({ params }: Props) {
-  const { sessionId } = await params;
+  const { locale, sessionId } = await params;
   const { organization } = await getOrCreateMember();
   const db = getDb();
 
@@ -48,6 +48,7 @@ export default async function ChatSessionPage({ params }: Props) {
 
       <ChatClient
         sessionId={session.id}
+        locale={locale}
         initialMessages={chatMessages.map((message) => ({
           id: message.id,
           role: message.role,

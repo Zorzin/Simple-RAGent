@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ type Props = {
 
 export default async function NewChatPage({ params }: Props) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.chatsNew" });
   const { organization } = await requireAdmin();
   const db = getDb();
 
@@ -32,32 +34,32 @@ export default async function NewChatPage({ params }: Props) {
       <Breadcrumbs
         locale={locale}
         items={[
-          { label: "Admin", href: "/admin" },
-          { label: "Chats", href: "/admin/chats" },
-          { label: "New" },
+          { label: t("breadcrumbs.admin"), href: "/admin" },
+          { label: t("breadcrumbs.chats"), href: "/admin/chats" },
+          { label: t("breadcrumbs.new") },
         ]}
       />
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">New chat</h1>
-            <p className="mt-2 text-sm text-zinc-600">Create a new chat room.</p>
+            <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <Button asChild variant="outline">
-            <Link href={`/${locale}/admin/chats`}>Back</Link>
+            <Link href={`/${locale}/admin/chats`}>{t("back")}</Link>
           </Button>
         </div>
       </div>
 
       <Card className="space-y-4 p-6">
         <form action={createChat} className="space-y-4">
-          <Input name="name" placeholder="Chat name" required />
-          <Textarea name="description" placeholder="Description (optional)" />
+          <Input name="name" placeholder={t("fields.namePlaceholder")} required />
+          <Textarea name="description" placeholder={t("fields.descriptionPlaceholder")} />
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-zinc-500">Assign groups</div>
+            <div className="text-xs font-semibold text-zinc-500">{t("fields.assignGroups")}</div>
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
               {groupRows.length === 0 ? (
-                <div className="text-zinc-500">No groups yet.</div>
+                <div className="text-zinc-500">{t("fields.noGroups")}</div>
               ) : (
                 groupRows.map((group) => (
                   <label key={group.id} className="flex items-center gap-2 py-1">
@@ -69,10 +71,10 @@ export default async function NewChatPage({ params }: Props) {
             </div>
           </div>
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-zinc-500">Assign files</div>
+            <div className="text-xs font-semibold text-zinc-500">{t("fields.assignFiles")}</div>
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
               {fileRows.length === 0 ? (
-                <div className="text-zinc-500">No files yet.</div>
+                <div className="text-zinc-500">{t("fields.noFiles")}</div>
               ) : (
                 fileRows.map((file) => (
                   <label key={file.id} className="flex items-center gap-2 py-1">
@@ -84,12 +86,12 @@ export default async function NewChatPage({ params }: Props) {
             </div>
           </div>
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-zinc-500">Connector</div>
+            <div className="text-xs font-semibold text-zinc-500">{t("fields.connector")}</div>
             <select
               name="connectorId"
               className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
             >
-              <option value="">No connector</option>
+              <option value="">{t("fields.noConnector")}</option>
               {connectorRows.map((connector) => (
                 <option key={connector.id} value={connector.id}>
                   {connector.name} ({connector.provider})
@@ -99,19 +101,19 @@ export default async function NewChatPage({ params }: Props) {
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500">Daily limit</label>
-              <Input name="limitDay" type="number" min="0" placeholder="e.g. 20000" />
+              <label className="text-xs font-semibold text-zinc-500">{t("limits.day")}</label>
+              <Input name="limitDay" type="number" min="0" placeholder={t("limits.example")} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500">Weekly limit</label>
-              <Input name="limitWeek" type="number" min="0" placeholder="e.g. 80000" />
+              <label className="text-xs font-semibold text-zinc-500">{t("limits.week")}</label>
+              <Input name="limitWeek" type="number" min="0" placeholder={t("limits.example")} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-500">Monthly limit</label>
-              <Input name="limitMonth" type="number" min="0" placeholder="e.g. 250000" />
+              <label className="text-xs font-semibold text-zinc-500">{t("limits.month")}</label>
+              <Input name="limitMonth" type="number" min="0" placeholder={t("limits.example")} />
             </div>
           </div>
-          <Button type="submit">Create chat</Button>
+          <Button type="submit">{t("submit")}</Button>
         </form>
       </Card>
     </div>

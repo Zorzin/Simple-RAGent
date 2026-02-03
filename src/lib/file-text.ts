@@ -29,7 +29,7 @@ export async function extractTextFromBuffer(params: {
       | { default?: (data: Buffer) => Promise<{ text?: string }> };
     const parse = typeof mod === "function" ? mod : mod.default;
     if (!parse) {
-      throw new Error("Failed to load pdf-parse module.");
+      throw new Error("PDF_PARSE_MODULE_UNAVAILABLE");
     }
     const data = Buffer.isBuffer(params.buffer) ? params.buffer : Buffer.from(params.buffer);
     const result = await parse(data);

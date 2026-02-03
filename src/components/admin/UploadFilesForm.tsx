@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useActionState, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export default function UploadFilesForm({ locale, action }: Props) {
+  const t = useTranslations("admin.upload");
   const [state, formAction] = useActionState(
     async (_prevState: ActionResult, formData: FormData) => action(formData),
     initialState,
@@ -53,12 +55,14 @@ export default function UploadFilesForm({ locale, action }: Props) {
   }
 
   if (showSuccess) {
+    const count = state.count ?? 0;
+    const filesLabel = count === 1 ? t("fileSingular") : t("filePlural");
     return (
       <Card className="space-y-4 p-6">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-900">Upload complete</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">{t("successTitle")}</h2>
           <p className="mt-1 text-sm text-zinc-600">
-            Uploaded {state.count ?? 0} file{state.count === 1 ? "" : "s"}. Upload another?
+            {t("successMessage", { count, files: filesLabel })}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -69,10 +73,10 @@ export default function UploadFilesForm({ locale, action }: Props) {
               setDismissed(true);
             }}
           >
-            Upload more
+            {t("uploadMore")}
           </Button>
           <Button asChild variant="outline">
-            <Link href={`/${locale}/admin/files`}>Back to list</Link>
+            <Link href={`/${locale}/admin/files`}>{t("backToList")}</Link>
           </Button>
         </div>
       </Card>
@@ -102,9 +106,9 @@ export default function UploadFilesForm({ locale, action }: Props) {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
         >
-          <div className="text-sm font-medium text-zinc-900">Drag and drop files here</div>
+          <div className="text-sm font-medium text-zinc-900">{t("dropzoneTitle")}</div>
           <div className="mt-2 text-xs text-zinc-500">
-            or click to browse. Multiple files supported.
+            {t("dropzoneHint")}
           </div>
           <Button
             type="button"
@@ -112,7 +116,7 @@ export default function UploadFilesForm({ locale, action }: Props) {
             className="mt-4"
             onClick={() => inputRef.current?.click()}
           >
-            Browse files
+            {t("browse")}
           </Button>
           <Input
             ref={inputRef}
@@ -129,12 +133,15 @@ export default function UploadFilesForm({ locale, action }: Props) {
         </div>
         {selectedFiles.length ? (
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-600">
-            {selectedFiles.length} file{selectedFiles.length === 1 ? "" : "s"} selected:{" "}
-            {selectedFiles.map((file) => file.name).join(", ")}
+            {t("selected", {
+              count: selectedFiles.length,
+              files: selectedFiles.length === 1 ? t("fileSingular") : t("filePlural"),
+              names: selectedFiles.map((file) => file.name).join(", "),
+            })}
           </div>
         ) : null}
         {state?.error ? <p className="text-sm text-red-500">{state.error}</p> : null}
-        <Button type="submit">Upload files</Button>
+        <Button type="submit">{t("submit")}</Button>
       </form>
     </Card>
   );

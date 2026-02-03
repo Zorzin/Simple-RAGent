@@ -4,36 +4,33 @@ import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
 import { requireAdmin } from "@/lib/admin";
 
-const quickLinks = [
-  { href: "/admin/chats", title: "Chats", description: "Create and organize chat rooms." },
-  { href: "/admin/files", title: "Files", description: "Upload and manage knowledge files." },
-  { href: "/admin/groups", title: "Groups", description: "Control member access by groups." },
-  { href: "/admin/members", title: "Members", description: "Invite and manage membership roles." },
-  {
-    href: "/admin/connectors",
-    title: "Connectors",
-    description: "Configure Claude, OpenAI, Copilot.",
-  },
-  { href: "/admin/limits", title: "Limits", description: "Set daily, weekly, monthly usage caps." },
-  { href: "/admin/access", title: "Access", description: "Link chats to files, groups, models." },
-];
-
 type Props = {
   params: Promise<{ locale: string }>;
 };
 
 export default async function AdminOverview({ params }: Props) {
-  const t = await getTranslations("home");
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "admin.overview" });
   const { member } = await requireAdmin();
+  const quickLinks = [
+    { href: "/admin/chats", title: t("links.chats.title"), description: t("links.chats.desc") },
+    { href: "/admin/files", title: t("links.files.title"), description: t("links.files.desc") },
+    { href: "/admin/groups", title: t("links.groups.title"), description: t("links.groups.desc") },
+    { href: "/admin/members", title: t("links.members.title"), description: t("links.members.desc") },
+    {
+      href: "/admin/connectors",
+      title: t("links.connectors.title"),
+      description: t("links.connectors.desc"),
+    },
+    { href: "/admin/limits", title: t("links.limits.title"), description: t("links.limits.desc") },
+  ];
 
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold text-zinc-900">{t("ctaSecondary")}</h1>
+        <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Welcome back, {member.displayName ?? member.email ?? "admin"}. Select a section to manage
-          your workspace.
+          {t("welcome", { name: member.displayName ?? member.email ?? t("fallbackName") })}
         </p>
       </div>
 

@@ -14,9 +14,18 @@ type Props = {
   sort: string;
   dir: SortDir;
   query?: string;
+  actionsLabel: string;
 };
 
-export default function AdminTableHeader({ locale, basePath, columns, sort, dir, query }: Props) {
+export default function AdminTableHeader({
+  locale,
+  basePath,
+  columns,
+  sort,
+  dir,
+  query,
+  actionsLabel,
+}: Props) {
   return (
     <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
       <tr>
@@ -37,7 +46,7 @@ export default function AdminTableHeader({ locale, basePath, columns, sort, dir,
             </th>
           );
         })}
-        <th className="px-4 py-3 text-right font-semibold">Actions</th>
+        <th className="px-4 py-3 text-right font-semibold">{actionsLabel}</th>
       </tr>
     </thead>
   );

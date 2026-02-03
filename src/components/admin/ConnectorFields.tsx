@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,15 +11,6 @@ type ProviderOption = {
   label: string;
   helper?: string;
 };
-
-const PROVIDERS: ProviderOption[] = [
-  { value: "anthropic", label: "Anthropic (Claude)" },
-  { value: "openai", label: "OpenAI" },
-  { value: "copilot", label: "GitHub Copilot" },
-  { value: "azure_openai", label: "Azure OpenAI" },
-  { value: "mistral", label: "Mistral" },
-  { value: "custom", label: "Custom" },
-];
 
 type Props = {
   initialName?: string;
@@ -37,6 +29,18 @@ export default function ConnectorFields({
   apiKeyRequired = false,
   apiKeyPlaceholder,
 }: Props) {
+  const t = useTranslations("admin.connectorFields");
+  const providers = useMemo<ProviderOption[]>(
+    () => [
+      { value: "anthropic", label: t("providers.anthropic") },
+      { value: "openai", label: t("providers.openai") },
+      { value: "copilot", label: t("providers.copilot") },
+      { value: "azure_openai", label: t("providers.azureOpenai") },
+      { value: "mistral", label: t("providers.mistral") },
+      { value: "custom", label: t("providers.custom") },
+    ],
+    [t],
+  );
   const [provider, setProvider] = useState(initialProvider || "anthropic");
   const [apiKey, setApiKey] = useState("");
   const [modelOptions, setModelOptions] = useState<string[]>([]);
@@ -44,13 +48,13 @@ export default function ConnectorFields({
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelError, setModelError] = useState("");
   const helper = useMemo(
-    () => PROVIDERS.find((item) => item.value === provider)?.helper ?? "",
-    [provider],
+    () => providers.find((item) => item.value === provider)?.helper ?? "",
+    [provider, providers],
   );
 
   async function handleLoadModels() {
     if (!apiKey.trim()) {
-      setModelError("Add an API key to load models.");
+      setModelError(t("modelErrors.missingKey"));
       return;
     }
 
@@ -67,7 +71,7 @@ export default function ConnectorFields({
       const data = (await response.json()) as { models?: string[]; error?: string };
 
       if (!response.ok) {
-        setModelError(data.error || "Unable to load models.");
+        setModelError(data.error || t("modelErrors.loadFailed"));
         setModelOptions([]);
         return;
       }
@@ -77,7 +81,7 @@ export default function ConnectorFields({
         setSelectedModel(data.models[0]);
       }
     } catch {
-      setModelError("Unable to load models.");
+      setModelError(t("modelErrors.loadFailed"));
       setModelOptions([]);
     } finally {
       setIsLoadingModels(false);
@@ -86,9 +90,14 @@ export default function ConnectorFields({
 
   return (
     <div className="space-y-3">
-      <Input name="name" defaultValue={initialName} placeholder="Connector name" required />
+      <Input
+        name="name"
+        defaultValue={initialName}
+        placeholder={t("fields.namePlaceholder")}
+        required
+      />
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-zinc-500">Provider</label>
+        <label className="text-xs font-semibold text-zinc-500">{t("fields.providerLabel")}</label>
         <select
           name="provider"
           className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
@@ -101,7 +110,7 @@ export default function ConnectorFields({
           }}
           required
         >
-          {PROVIDERS.map((item) => (
+          {providers.map((item) => (
             <option key={item.value} value={item.value}>
               {item.label}
             </option>
@@ -111,7 +120,7 @@ export default function ConnectorFields({
       </div>
       {modelOptions.length ? (
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-zinc-500">Model</label>
+          <label className="text-xs font-semibold text-zinc-500">{t("fields.modelLabel")}</label>
           <select
             name="model"
             className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
@@ -126,7 +135,11 @@ export default function ConnectorFields({
           </select>
         </div>
       ) : (
-        <Input name="model" defaultValue={initialModel ?? ""} placeholder="Model (optional)" />
+        <Input
+          name="model"
+          defaultValue={initialModel ?? ""}
+          placeholder={t("fields.modelPlaceholder")}
+        />
       )}
       {showApiKey ? (
         <div className="space-y-2">
@@ -135,7 +148,7 @@ export default function ConnectorFields({
             type="password"
             placeholder={
               apiKeyPlaceholder ||
-              (provider === "copilot" ? "GitHub token (with Copilot access)" : "API key (optional)")
+              (provider === "copilot" ? t("fields.copilotToken") : t("fields.apiKeyPlaceholder"))
             }
             required={apiKeyRequired}
             value={apiKey}
@@ -143,16 +156,16 @@ export default function ConnectorFields({
           />
           <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
             <Button type="button" variant="outline" onClick={handleLoadModels}>
-              {isLoadingModels ? "Loading models..." : "Load models"}
+              {isLoadingModels ? t("actions.loadingModels") : t("actions.loadModels")}
             </Button>
             {modelError ? <span className="text-red-500">{modelError}</span> : null}
           </div>
           {provider === "copilot" ? (
             <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
               <Button type="button" variant="outline" disabled>
-                Authorize Copilot (coming soon)
+                {t("copilot.authorize")}
               </Button>
-              <span>For now paste a GitHub token with Copilot access.</span>
+              <span>{t("copilot.helper")}</span>
             </div>
           ) : null}
         </div>

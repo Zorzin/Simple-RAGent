@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export default function InviteMemberForm({ locale, action }: Props) {
+  const t = useTranslations("admin.inviteForm");
   const [state, formAction] = useActionState(
     async (_prevState: ActionResult, formData: FormData) => action(formData),
     initialState,
@@ -32,9 +34,9 @@ export default function InviteMemberForm({ locale, action }: Props) {
     return (
       <Card className="space-y-4 p-6" key={`success-${formKey}`}>
         <div>
-          <h2 className="text-lg font-semibold text-zinc-900">Invite sent</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">{t("successTitle")}</h2>
           <p className="mt-1 text-sm text-zinc-600">
-            The invitation was sent successfully. Would you like to invite another member?
+            {t("successMessage")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -45,10 +47,10 @@ export default function InviteMemberForm({ locale, action }: Props) {
               setDismissed(true);
             }}
           >
-            Invite another
+            {t("inviteAnother")}
           </Button>
           <Button asChild variant="outline">
-            <Link href={`/${locale}/admin/members`}>Back to list</Link>
+            <Link href={`/${locale}/admin/members`}>{t("backToList")}</Link>
           </Button>
         </div>
       </Card>
@@ -63,17 +65,17 @@ export default function InviteMemberForm({ locale, action }: Props) {
         className="space-y-3"
         onSubmit={() => setDismissed(false)}
       >
-        <Input name="emailAddress" placeholder="Email address" required />
+        <Input name="emailAddress" placeholder={t("emailPlaceholder")} required />
         <select
           name="role"
           className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
           required
         >
-          <option value="org:member">Member</option>
-          <option value="org:admin">Admin</option>
+          <option value="org:member">{t("roles.member")}</option>
+          <option value="org:admin">{t("roles.admin")}</option>
         </select>
         {state?.error ? <p className="text-sm text-red-500">{state.error}</p> : null}
-        <Button type="submit">Send invite</Button>
+        <Button type="submit">{t("submit")}</Button>
       </form>
     </Card>
   );
