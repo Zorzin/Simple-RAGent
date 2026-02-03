@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import { uploadToR2 } from "@/lib/storage/r2";
+
 import { getDb } from "@/db";
-import { put } from "@vercel/blob";
 
 import {
   chatFiles,
@@ -35,7 +37,7 @@ const connectorSchema = z.object({
 });
 
 const tokenLimitSchema = z.object({
-  memberId: z.string().uuid(),
+  clerkUserId: z.string(),
   interval: z.enum(["day", "week", "month"]),
   limitTokens: z.coerce.number().int().positive(),
 });
@@ -109,14 +111,23 @@ export async function createConnector(formData: FormData) {
 }
 
 export async function setTokenLimit(formData: FormData) {
+  const { orgId } = await auth();
+  if (!orgId) {
+    throw new Error("Organization required");
+  }
   const data = tokenLimitSchema.parse({
-    memberId: formData.get("memberId"),
+    clerkUserId: formData.get("clerkUserId"),
     interval: formData.get("interval"),
     limitTokens: formData.get("limitTokens"),
   });
 
   const db = getDb();
-  await db.insert(tokenLimits).values(data);
+  await db.insert(tokenLimits).values({
+    organizationId: (await requireAdmin()).organization.id,
+    clerkUserId: data.clerkUserId,
+    interval: data.interval,
+    limitTokens: data.limitTokens,
+  });
 
   revalidatePath("/admin");
 }
@@ -130,17 +141,21 @@ export async function uploadFile(formData: FormData) {
   }
 
   const db = getDb();
-  const blob = await put(`org-${organization.id}/${file.name}`, file, {
-    access: "private",
+  const key = `org-${organization.id}/${Date.now()}-${file.name}`;
+  await uploadToR2({
+    key,
+    body: file,
+    contentType: file.type,
   });
 
   await db.insert(files).values({
     organizationId: organization.id,
     name: file.name,
-    blobUrl: blob.url,
+    storageProvider: "r2",
+    storageKey: key,
     mimeType: file.type,
     size: file.size,
-    metadata: { pathname: blob.pathname },
+    metadata: null,
   });
 
   revalidatePath("/admin");
@@ -178,6 +193,36 @@ export async function linkChatToConnector(formData: FormData) {
 
   const db = getDb();
   await db.insert(chatLlmConnectors).values(data);
+
+  revalidatePath("/admin");
+}
+
+const inviteSchema = z.object({
+  emailAddress: z.string().email(),
+  role: z.enum(["org:admin", "org:member"]),
+});
+
+export async function inviteMember(formData: FormData) {
+  const { userId, orgId } = await auth();
+  if (!userId || !orgId) {
+    throw new Error("Organization required");
+  }
+  if (!process.env.CLERK_SECRET_KEY) {
+    throw new Error("CLERK_SECRET_KEY is not configured");
+  }
+
+  const data = inviteSchema.parse({
+    emailAddress: formData.get("emailAddress"),
+    role: formData.get("role"),
+  });
+
+  const client = await clerkClient();
+  await client.organizations.createOrganizationInvitation({
+    organizationId: orgId,
+    inviterUserId: userId,
+    emailAddress: data.emailAddress,
+    role: data.role,
+  });
 
   revalidatePath("/admin");
 }

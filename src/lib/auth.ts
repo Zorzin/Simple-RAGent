@@ -7,7 +7,7 @@ export type SessionUser = {
 };
 
 export async function requireUser(): Promise<SessionUser> {
-  const { userId } = auth();
+  const { userId } = await auth();
 
   if (!userId) {
     throw new Error("Unauthorized");
@@ -20,4 +20,10 @@ export async function requireUser(): Promise<SessionUser> {
     email: user?.emailAddresses?.[0]?.emailAddress ?? null,
     name: user?.fullName ?? user?.firstName ?? user?.username ?? null,
   };
+}
+
+export async function getActiveOrg() {
+  const { orgId, orgRole } = await auth();
+
+  return { orgId, orgRole };
 }

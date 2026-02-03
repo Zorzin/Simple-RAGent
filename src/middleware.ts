@@ -11,16 +11,20 @@ const intlMiddleware = createIntlMiddleware({
 const isProtectedRoute = createRouteMatcher([
   "/(en|pl)/app(.*)",
   "/(en|pl)/admin(.*)",
+  "/(en|pl)/create-organization(.*)",
 ]);
 
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
-    auth().protect();
+    const { isAuthenticated, redirectToSignIn } = await auth();
+    if (!isAuthenticated) {
+      return redirectToSignIn();
+    }
   }
 
   return intlMiddleware(req);
 });
 
 export const config = {
-  matcher: ["/", "/(en|pl)/:path*"],
+  matcher: ["/", "/(en|pl)", "/(en|pl)/:path*"],
 };

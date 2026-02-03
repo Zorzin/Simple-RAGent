@@ -12,9 +12,10 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.981.0",
+    "@aws-sdk/s3-request-presigner": "^3.981.0",
     "@clerk/nextjs": "^6.37.1",
     "@neondatabase/serverless": "^1.0.2",
-    "@vercel/blob": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.1",

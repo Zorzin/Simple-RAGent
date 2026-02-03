@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
   uuid,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const memberRole = pgEnum("member_role", ["admin", "member"]);
@@ -21,13 +22,18 @@ export const llmProvider = pgEnum("llm_provider", [
   "custom",
 ]);
 
-export const organizations = pgTable("organizations", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-});
+export const organizations = pgTable(
+  "organizations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clerkOrgId: text("clerk_org_id").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    clerkOrgIdx: uniqueIndex("organizations_clerk_org_idx").on(table.clerkOrgId),
+  }),
+);
 
 export const members = pgTable(
   "members",
@@ -37,16 +43,17 @@ export const members = pgTable(
       .references(() => organizations.id)
       .notNull(),
     clerkUserId: text("clerk_user_id").notNull(),
+    clerkOrgId: text("clerk_org_id").notNull(),
+    orgRole: text("org_role"),
     email: text("email"),
     displayName: text("display_name"),
     role: memberRole("role").default("member").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     organizationIdx: index("members_org_idx").on(table.organizationId),
     clerkIdx: index("members_clerk_idx").on(table.clerkUserId),
+    clerkOrgIdx: index("members_clerk_org_idx").on(table.clerkOrgId),
   }),
 );
 
@@ -58,9 +65,7 @@ export const groups = pgTable(
       .references(() => organizations.id)
       .notNull(),
     name: text("name").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     organizationIdx: index("groups_org_idx").on(table.organizationId),
@@ -77,9 +82,7 @@ export const groupMembers = pgTable(
     memberId: uuid("member_id")
       .references(() => members.id)
       .notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     groupIdx: index("group_members_group_idx").on(table.groupId),
@@ -97,9 +100,7 @@ export const chats = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     isGeneral: boolean("is_general").default(false).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     organizationIdx: index("chats_org_idx").on(table.organizationId),
@@ -114,13 +115,12 @@ export const files = pgTable(
       .references(() => organizations.id)
       .notNull(),
     name: text("name").notNull(),
-    blobUrl: text("blob_url").notNull(),
+    storageProvider: text("storage_provider").notNull().default("r2"),
+    storageKey: text("storage_key").notNull(),
     mimeType: text("mime_type"),
     size: integer("size"),
     metadata: jsonb("metadata"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     organizationIdx: index("files_org_idx").on(table.organizationId),
@@ -172,9 +172,7 @@ export const llmConnectors = pgTable(
     provider: llmProvider("provider").notNull(),
     model: text("model"),
     apiKeyEncrypted: text("api_key_encrypted"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     organizationIdx: index("llm_connectors_org_idx").on(table.organizationId),
@@ -202,17 +200,16 @@ export const tokenLimits = pgTable(
   "token_limits",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    memberId: uuid("member_id")
-      .references(() => members.id)
+    organizationId: uuid("organization_id")
+      .references(() => organizations.id)
       .notNull(),
+    clerkUserId: text("clerk_user_id").notNull(),
     interval: tokenInterval("interval").notNull(),
     limitTokens: integer("limit_tokens").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    memberIdx: index("token_limits_member_idx").on(table.memberId),
+    memberIdx: index("token_limits_member_idx").on(table.clerkUserId),
   }),
 );
 
@@ -226,9 +223,7 @@ export const messages = pgTable(
     memberId: uuid("member_id").references(() => members.id),
     role: text("role").notNull(),
     content: text("content").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     chatIdx: index("messages_chat_idx").on(table.chatId),
