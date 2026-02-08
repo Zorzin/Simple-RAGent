@@ -420,7 +420,11 @@
       "pendingTitle": "Oczekujące zaproszenia",
       "pendingEmpty": "Brak oczekujących zaproszeń.",
       "pendingStatus": "Oczekuje",
-      "anonymous": "Nieznany członek"
+      "anonymous": "Nieznany członek",
+      "roles": {
+        "member": "Członek",
+        "admin": "Administrator"
+      }
     },
     "membersInvite": {
       "breadcrumbs": {

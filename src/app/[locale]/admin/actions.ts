@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { randomUUID } from "crypto";
 import { and, eq } from "drizzle-orm";
 
 import { getDb } from "@/db";
@@ -18,29 +18,16 @@ import {
   groupMembers,
   groups,
   llmConnectors,
+  memberInvites,
+  members,
   tokenLimits,
 } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
 import { chunkText, embedTexts, estimateTokens } from "@/lib/embeddings";
+import { sendInviteEmail } from "@/lib/email";
 import { extractTextFromBuffer } from "@/lib/file-text";
 import { deleteFromR2, downloadFromR2, uploadToR2 } from "@/lib/storage/r2";
-
-function getClerkErrorMessage(error: unknown) {
-  if (error && typeof error === "object" && "errors" in error) {
-    const err = error as { errors?: Array<{ longMessage?: string; message?: string }> };
-    const first = err.errors?.[0];
-    if (first?.longMessage) {
-      return first.longMessage;
-    }
-    if (first?.message) {
-      return first.message;
-    }
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return "Clerk request failed.";
-}
+import { getAppUrl } from "@/lib/url";
 
 const chatSchema = z.object({
   name: z.string().min(2, "Name is too short"),
@@ -92,7 +79,7 @@ const connectorUpdateSchema = z.object({
 });
 
 const tokenLimitSchema = z.object({
-  clerkUserId: z.string(),
+  memberId: z.string().uuid(),
   interval: z.enum(["day", "week", "month"]),
   limitTokens: z.coerce.number().int().positive(),
 });
@@ -123,8 +110,8 @@ const chatConnectorSchema = z.object({
 });
 
 const inviteSchema = z.object({
-  emailAddress: z.string().email(),
-  role: z.enum(["org:admin", "org:member"]),
+  emailAddress: z.string().trim().email(),
+  role: z.enum(["admin", "member"]),
 });
 
 const revokeInviteSchema = z.object({
@@ -133,13 +120,13 @@ const revokeInviteSchema = z.object({
 
 const resendInviteSchema = z.object({
   invitationId: z.string().min(1),
-  emailAddress: z.string().email(),
-  role: z.enum(["org:admin", "org:member"]),
+  emailAddress: z.string().trim().email(),
+  role: z.enum(["admin", "member"]),
 });
 
 const memberRoleSchema = z.object({
   membershipId: z.string(),
-  role: z.enum(["org:admin", "org:member"]),
+  role: z.enum(["admin", "member"]),
 });
 
 export async function createChat(formData: FormData) {
@@ -414,25 +401,29 @@ export async function deleteConnector(formData: FormData) {
 }
 
 export async function setTokenLimit(formData: FormData) {
-  const { orgId } = await auth();
-  if (!orgId) {
-    throw new Error("Organization required");
-  }
   const data = tokenLimitSchema.parse({
-    clerkUserId: formData.get("clerkUserId"),
+    memberId: formData.get("memberId"),
     interval: formData.get("interval"),
     limitTokens: formData.get("limitTokens"),
   });
 
   const db = getDb();
   const { organization } = await requireAdmin();
+  const [member] = await db
+    .select()
+    .from(members)
+    .where(and(eq(members.id, data.memberId), eq(members.organizationId, organization.id)))
+    .limit(1);
+  if (!member) {
+    throw new Error("Member not found");
+  }
   const [existing] = await db
     .select()
     .from(tokenLimits)
     .where(
       and(
         eq(tokenLimits.organizationId, organization.id),
-        eq(tokenLimits.clerkUserId, data.clerkUserId),
+        eq(tokenLimits.memberId, data.memberId),
         eq(tokenLimits.interval, data.interval),
       ),
     )
@@ -446,7 +437,7 @@ export async function setTokenLimit(formData: FormData) {
   } else {
     await db.insert(tokenLimits).values({
       organizationId: organization.id,
-      clerkUserId: data.clerkUserId,
+      memberId: data.memberId,
       interval: data.interval,
       limitTokens: data.limitTokens,
     });
@@ -692,29 +683,47 @@ export async function unlinkChatFromConnector(formData: FormData) {
 }
 
 export async function inviteMember(formData: FormData) {
-  const { userId, orgId } = await auth();
-  if (!userId || !orgId) {
-    return { ok: false, error: "Organization required" };
-  }
-  if (!process.env.CLERK_SECRET_KEY) {
-    return { ok: false, error: "CLERK_SECRET_KEY is not configured" };
-  }
-
-  const client = await clerkClient();
+  const { organization, member } = await requireAdmin();
   const data = inviteSchema.parse({
     emailAddress: formData.get("emailAddress"),
     role: formData.get("role"),
   });
+  const locale = formData.get("locale") === "pl" ? "pl" : "en";
 
+  const db = getDb();
+  const normalizedEmail = data.emailAddress.toLowerCase();
+  const [existingMember] = await db
+    .select({ id: members.id })
+    .from(members)
+    .where(and(eq(members.organizationId, organization.id), eq(members.email, normalizedEmail)))
+    .limit(1);
+
+  if (existingMember) {
+    return { ok: false, error: "Member already exists." };
+  }
+
+  const token = randomUUID();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  await db.insert(memberInvites).values({
+    organizationId: organization.id,
+    email: normalizedEmail,
+    role: data.role,
+    token,
+    createdByUserId: member.userId,
+    expiresAt,
+  });
+
+  const inviteUrl = `${getAppUrl()}/${locale}/invite/${token}`;
   try {
-    await client.organizations.createOrganizationInvitation({
-      organizationId: orgId,
-      inviterUserId: userId,
-      emailAddress: data.emailAddress,
-      role: data.role,
+    await sendInviteEmail({
+      to: normalizedEmail,
+      organizationName: organization.name,
+      inviterName: member.displayName ?? member.email ?? "Admin",
+      inviteUrl,
     });
   } catch (error) {
-    return { ok: false, error: getClerkErrorMessage(error) };
+    return { ok: false, error: error instanceof Error ? error.message : "Invite email failed." };
   }
 
   revalidatePath("/admin/members");
@@ -722,108 +731,88 @@ export async function inviteMember(formData: FormData) {
 }
 
 export async function revokeInvitation(formData: FormData) {
-  const { userId, orgId } = await auth();
-  if (!userId || !orgId) {
-    throw new Error("Organization required");
-  }
-  if (!process.env.CLERK_SECRET_KEY) {
-    throw new Error("CLERK_SECRET_KEY is not configured");
-  }
-
-  const client = await clerkClient();
+  const { organization } = await requireAdmin();
   const data = revokeInviteSchema.parse({
     invitationId: formData.get("invitationId"),
   });
 
-  try {
-    await client.organizations.revokeOrganizationInvitation({
-      organizationId: orgId,
-      invitationId: data.invitationId,
-      requestingUserId: userId,
-    });
-  } catch (error) {
-    throw new Error(getClerkErrorMessage(error));
-  }
+  const db = getDb();
+  await db
+    .update(memberInvites)
+    .set({ revokedAt: new Date() })
+    .where(
+      and(
+        eq(memberInvites.id, data.invitationId),
+        eq(memberInvites.organizationId, organization.id),
+      ),
+    );
 
   revalidatePath("/admin/members");
 }
 
 export async function resendInvitation(formData: FormData) {
-  const { userId, orgId } = await auth();
-  if (!userId || !orgId) {
-    throw new Error("Organization required");
-  }
-  if (!process.env.CLERK_SECRET_KEY) {
-    throw new Error("CLERK_SECRET_KEY is not configured");
-  }
-
-  const client = await clerkClient();
+  const { organization, member } = await requireAdmin();
   const data = resendInviteSchema.parse({
     invitationId: formData.get("invitationId"),
     emailAddress: formData.get("emailAddress"),
     role: formData.get("role"),
   });
+  const locale = formData.get("locale") === "pl" ? "pl" : "en";
 
-  try {
-    await client.organizations.revokeOrganizationInvitation({
-      organizationId: orgId,
-      invitationId: data.invitationId,
-      requestingUserId: userId,
-    });
+  const token = randomUUID();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const db = getDb();
+  await db
+    .update(memberInvites)
+    .set({
+      token,
+      expiresAt,
+      revokedAt: null,
+      acceptedAt: null,
+      acceptedByUserId: null,
+    })
+    .where(
+      and(
+        eq(memberInvites.id, data.invitationId),
+        eq(memberInvites.organizationId, organization.id),
+      ),
+    );
 
-    await client.organizations.createOrganizationInvitation({
-      organizationId: orgId,
-      inviterUserId: userId,
-      emailAddress: data.emailAddress,
-      role: data.role,
-    });
-  } catch (error) {
-    throw new Error(getClerkErrorMessage(error));
-  }
+  const inviteUrl = `${getAppUrl()}/${locale}/invite/${token}`;
+  await sendInviteEmail({
+    to: data.emailAddress,
+    organizationName: organization.name,
+    inviterName: member.displayName ?? member.email ?? "Admin",
+    inviteUrl,
+  });
 
   revalidatePath("/admin/members");
 }
 
 export async function updateMemberRole(formData: FormData) {
-  const { orgId } = await auth();
-  if (!orgId) {
-    throw new Error("Organization required");
-  }
   const data = memberRoleSchema.parse({
     membershipId: formData.get("membershipId"),
     role: formData.get("role"),
   });
 
-  const client = await clerkClient();
-  try {
-    await client.organizations.updateOrganizationMembership({
-      organizationId: orgId,
-      membershipId: data.membershipId,
-      role: data.role,
-    });
-  } catch (error) {
-    throw new Error(getClerkErrorMessage(error));
-  }
+  const { organization } = await requireAdmin();
+  const db = getDb();
+  await db
+    .update(members)
+    .set({ role: data.role })
+    .where(and(eq(members.id, data.membershipId), eq(members.organizationId, organization.id)));
 
   revalidatePath("/admin/members");
 }
 
 export async function deleteMemberRole(formData: FormData) {
-  const { orgId } = await auth();
-  if (!orgId) {
-    throw new Error("Organization required");
-  }
+  const { organization } = await requireAdmin();
   const membershipId = z.string().parse(formData.get("membershipId"));
 
-  const client = await clerkClient();
-  try {
-    await client.organizations.deleteOrganizationMembership({
-      organizationId: orgId,
-      membershipId,
-    });
-  } catch (error) {
-    throw new Error(getClerkErrorMessage(error));
-  }
+  const db = getDb();
+  await db
+    .delete(members)
+    .where(and(eq(members.id, membershipId), eq(members.organizationId, organization.id)));
 
   revalidatePath("/admin/members");
 }

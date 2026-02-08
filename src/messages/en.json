@@ -420,7 +420,11 @@
       "pendingTitle": "Pending invitations",
       "pendingEmpty": "No pending invites.",
       "pendingStatus": "Pending",
-      "anonymous": "Unknown member"
+      "anonymous": "Unknown member",
+      "roles": {
+        "member": "Member",
+        "admin": "Admin"
+      }
     },
     "membersInvite": {
       "breadcrumbs": {

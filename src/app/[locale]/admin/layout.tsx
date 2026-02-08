@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 
 import AdminNav from "@/components/admin/AdminNav";
+import { requireAdmin } from "@/lib/admin";
 
 type Props = {
   children: ReactNode;
@@ -11,6 +12,7 @@ type Props = {
 export default async function AdminLayout({ children, params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "admin.layout" });
+  const { organization } = await requireAdmin();
   const navItems = [
     { href: "/admin", label: t("nav.overview") },
     { href: "/admin/chats", label: t("nav.chats") },
@@ -34,7 +36,7 @@ export default async function AdminLayout({ children, params }: Props) {
               <div className="text-xs text-zinc-500">{t("subtitle")}</div>
             </div>
           </div>
-          <div className="text-xs text-zinc-500">{t("singleOrg")}</div>
+          <div className="text-xs text-zinc-500">{organization.name}</div>
         </div>
       </header>
 
