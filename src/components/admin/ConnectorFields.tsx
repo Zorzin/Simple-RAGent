@@ -16,6 +16,8 @@ type Props = {
   initialName?: string;
   initialProvider?: string;
   initialModel?: string | null;
+  initialAzureEndpoint?: string | null;
+  initialAzureApiVersion?: string | null;
   showApiKey?: boolean;
   apiKeyRequired?: boolean;
   apiKeyPlaceholder?: string;
@@ -25,6 +27,8 @@ export default function ConnectorFields({
   initialName,
   initialProvider,
   initialModel,
+  initialAzureEndpoint,
+  initialAzureApiVersion,
   showApiKey = true,
   apiKeyRequired = false,
   apiKeyPlaceholder,
@@ -45,6 +49,8 @@ export default function ConnectorFields({
   const [apiKey, setApiKey] = useState("");
   const [modelOptions, setModelOptions] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState(initialModel ?? "");
+  const [azureEndpoint, setAzureEndpoint] = useState(initialAzureEndpoint ?? "");
+  const [azureApiVersion, setAzureApiVersion] = useState(initialAzureApiVersion ?? "");
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelError, setModelError] = useState("");
   const helper = useMemo(
@@ -65,7 +71,11 @@ export default function ConnectorFields({
       const response = await fetch("/api/models", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, apiKey }),
+        body: JSON.stringify({
+          provider,
+          apiKey,
+          ...(provider === "azure_openai" && { azureEndpoint, azureApiVersion }),
+        }),
       });
 
       const data = (await response.json()) as { models?: string[]; error?: string };
@@ -118,7 +128,46 @@ export default function ConnectorFields({
         </select>
         {helper ? <p className="text-xs text-zinc-500">{helper}</p> : null}
       </div>
-      {modelOptions.length ? (
+      {provider === "azure_openai" ? (
+        <>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-zinc-500">
+              {t("fields.azureEndpointLabel")}
+            </label>
+            <Input
+              name="azureEndpoint"
+              type="url"
+              value={azureEndpoint}
+              onChange={(event) => setAzureEndpoint(event.target.value)}
+              placeholder={t("fields.azureEndpointPlaceholder")}
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-zinc-500">
+              {t("fields.azureDeploymentLabel")}
+            </label>
+            <Input
+              name="model"
+              defaultValue={initialModel ?? ""}
+              placeholder={t("fields.azureDeploymentPlaceholder")}
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-zinc-500">
+              {t("fields.azureApiVersionLabel")}
+            </label>
+            <Input
+              name="azureApiVersion"
+              value={azureApiVersion}
+              onChange={(event) => setAzureApiVersion(event.target.value)}
+              placeholder="2024-10-21"
+            />
+            <p className="text-xs text-zinc-500">{t("fields.azureApiVersionHelper")}</p>
+          </div>
+        </>
+      ) : modelOptions.length ? (
         <div className="space-y-1">
           <label className="text-xs font-semibold text-zinc-500">{t("fields.modelLabel")}</label>
           <select

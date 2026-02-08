@@ -287,6 +287,8 @@ export const llmConnectors = pgTable(
     provider: llmProvider("provider").notNull(),
     model: text("model"),
     apiKeyEncrypted: text("api_key_encrypted"),
+    azureEndpoint: text("azure_endpoint"),
+    azureApiVersion: text("azure_api_version"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({

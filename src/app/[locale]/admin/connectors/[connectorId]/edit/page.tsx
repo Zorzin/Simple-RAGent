@@ -61,6 +61,8 @@ export default async function EditConnectorPage({ params }: Props) {
             initialName={connector.name}
             initialProvider={connector.provider}
             initialModel={connector.model ?? ""}
+            initialAzureEndpoint={connector.azureEndpoint}
+            initialAzureApiVersion={connector.azureApiVersion}
           />
           <div className="flex items-center gap-2">
             <Button type="submit">{t("save")}</Button>

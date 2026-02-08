@@ -68,6 +68,8 @@ const connectorSchema = z.object({
   provider: z.enum(["openai", "anthropic", "mistral", "azure_openai", "copilot", "custom"]),
   model: z.string().optional(),
   apiKey: z.string().optional(),
+  azureEndpoint: z.string().url().optional(),
+  azureApiVersion: z.string().optional(),
 });
 
 const connectorUpdateSchema = z.object({
@@ -76,6 +78,8 @@ const connectorUpdateSchema = z.object({
   provider: z.enum(["openai", "anthropic", "mistral", "azure_openai", "copilot", "custom"]),
   model: z.string().optional(),
   apiKey: z.string().optional(),
+  azureEndpoint: z.string().url().optional(),
+  azureApiVersion: z.string().optional(),
 });
 
 const tokenLimitSchema = z.object({
@@ -349,6 +353,8 @@ export async function createConnector(formData: FormData) {
     provider: formData.get("provider"),
     model: formData.get("model") || undefined,
     apiKey: formData.get("apiKey") || undefined,
+    azureEndpoint: formData.get("azureEndpoint") || undefined,
+    azureApiVersion: formData.get("azureApiVersion") || undefined,
   });
 
   const db = getDb();
@@ -358,6 +364,8 @@ export async function createConnector(formData: FormData) {
     provider: data.provider,
     model: data.model,
     apiKeyEncrypted: data.apiKey,
+    azureEndpoint: data.azureEndpoint,
+    azureApiVersion: data.azureApiVersion,
   });
 
   revalidatePath("/admin/connectors");
@@ -370,6 +378,8 @@ export async function updateConnector(formData: FormData) {
     provider: formData.get("provider"),
     model: formData.get("model") || undefined,
     apiKey: formData.get("apiKey") || undefined,
+    azureEndpoint: formData.get("azureEndpoint") || undefined,
+    azureApiVersion: formData.get("azureApiVersion") || undefined,
   });
 
   const db = getDb();
@@ -378,10 +388,14 @@ export async function updateConnector(formData: FormData) {
     provider: typeof data.provider;
     model?: string;
     apiKeyEncrypted?: string;
+    azureEndpoint?: string | null;
+    azureApiVersion?: string | null;
   } = {
     name: data.name,
     provider: data.provider,
     model: data.model,
+    azureEndpoint: data.azureEndpoint ?? null,
+    azureApiVersion: data.azureApiVersion ?? null,
   };
 
   if (data.apiKey) {

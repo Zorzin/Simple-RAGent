@@ -16,6 +16,8 @@ type Provider = (typeof SUPPORTED_PROVIDERS)[number];
 type Payload = {
   provider?: Provider;
   apiKey?: string;
+  azureEndpoint?: string;
+  azureApiVersion?: string;
 };
 
 export async function POST(request: Request) {
@@ -53,6 +55,31 @@ export async function POST(request: Request) {
       const client = new Anthropic({ apiKey: body.apiKey });
       const response = await client.models.list();
       const models = response.data?.map((model) => model.id).sort() ?? [];
+      return NextResponse.json({ models });
+    }
+
+    if (body.provider === "azure_openai") {
+      if (!body.azureEndpoint) {
+        return NextResponse.json(
+          { error: "Azure endpoint is required to list deployments." },
+          { status: 400 },
+        );
+      }
+      const endpoint = body.azureEndpoint.replace(/\/+$/, "");
+      const apiVersion = body.azureApiVersion || "2024-10-21";
+      const url = `${endpoint}/openai/deployments?api-version=${apiVersion}`;
+      const response = await fetch(url, {
+        headers: { "api-key": body.apiKey },
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        return NextResponse.json(
+          { error: text || "Failed to list Azure deployments." },
+          { status: 400 },
+        );
+      }
+      const data = (await response.json()) as { data?: Array<{ id: string }> };
+      const models = data.data?.map((d) => d.id).sort() ?? [];
       return NextResponse.json({ models });
     }
 

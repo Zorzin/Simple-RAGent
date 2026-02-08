@@ -176,6 +176,12 @@
         "providerLabel": "Provider",
         "modelLabel": "Model",
         "modelPlaceholder": "Model (optional)",
+        "azureEndpointLabel": "Azure Endpoint",
+        "azureEndpointPlaceholder": "https://your-resource.openai.azure.com",
+        "azureDeploymentLabel": "Deployment Name",
+        "azureDeploymentPlaceholder": "my-gpt4o-deployment",
+        "azureApiVersionLabel": "API Version",
+        "azureApiVersionHelper": "Leave empty to use default (2024-10-21).",
         "copilotToken": "GitHub token (with Copilot access)",
         "apiKeyPlaceholder": "API key (optional)"
       },

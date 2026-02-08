@@ -6,14 +6,17 @@ export async function generateResponse(params: {
   provider: ProviderName;
   model?: string | null;
   apiKey?: string | null;
+  azureEndpoint?: string | null;
+  azureApiVersion?: string | null;
   system: string;
   user: string;
   maxOutputTokens?: number;
 }) {
-  const { provider, model, apiKey, system, user, maxOutputTokens } = params;
+  const { provider, model, apiKey, azureEndpoint, azureApiVersion, system, user, maxOutputTokens } =
+    params;
 
   const { text } = await generateText({
-    model: getLanguageModel({ provider, model, apiKey }),
+    model: getLanguageModel({ provider, model, apiKey, azureEndpoint, azureApiVersion }),
     system,
     prompt: user,
     maxOutputTokens: maxOutputTokens ?? 800,

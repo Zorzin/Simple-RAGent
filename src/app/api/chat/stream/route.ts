@@ -84,6 +84,8 @@ export async function POST(request: Request) {
       provider: llmConnectors.provider,
       model: llmConnectors.model,
       apiKey: llmConnectors.apiKeyEncrypted,
+      azureEndpoint: llmConnectors.azureEndpoint,
+      azureApiVersion: llmConnectors.azureApiVersion,
     })
     .from(chatLlmConnectors)
     .leftJoin(llmConnectors, eq(chatLlmConnectors.connectorId, llmConnectors.id))
@@ -96,12 +98,15 @@ export async function POST(request: Request) {
       provider: ProviderName;
       model: string | null;
       apiKey: string | null;
+      azureEndpoint: string | null;
+      azureApiVersion: string | null;
     } => Boolean(row.provider),
   );
 
   const connector =
     availableConnectors.find((row) => row.provider === "anthropic") ||
     availableConnectors.find((row) => row.provider === "openai") ||
+    availableConnectors.find((row) => row.provider === "azure_openai") ||
     availableConnectors.find((row) => row.provider === "copilot") ||
     availableConnectors[0];
 
@@ -175,9 +180,17 @@ export async function POST(request: Request) {
 
   const provider = connector.provider;
   const connectorModel = connector.model;
+  const connectorAzureEndpoint = connector.azureEndpoint;
+  const connectorAzureApiVersion = connector.azureApiVersion;
 
   const result = streamText({
-    model: getLanguageModel({ provider, model: connectorModel, apiKey: resolvedKey }),
+    model: getLanguageModel({
+      provider,
+      model: connectorModel,
+      apiKey: resolvedKey,
+      azureEndpoint: connectorAzureEndpoint,
+      azureApiVersion: connectorAzureApiVersion,
+    }),
     system: systemPrompt,
     messages: [...history, { role: "user" as const, content: userContent }],
     tools,
@@ -205,6 +218,8 @@ export async function POST(request: Request) {
             provider,
             model: connectorModel,
             apiKey: resolvedKey,
+            azureEndpoint: connectorAzureEndpoint,
+            azureApiVersion: connectorAzureApiVersion,
             system: tPrompts("titleSystem"),
             user: titlePrompt,
             maxOutputTokens: 20,
@@ -231,6 +246,8 @@ export async function POST(request: Request) {
         provider,
         model: connectorModel,
         apiKey: resolvedKey,
+        azureEndpoint: connectorAzureEndpoint,
+        azureApiVersion: connectorAzureApiVersion,
       }).catch(() => {});
     },
   });

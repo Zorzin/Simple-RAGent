@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.38",
+    "@ai-sdk/azure": "^3.0.27",
     "@ai-sdk/openai": "^3.0.26",
     "@ai-sdk/react": "^3.0.79",
     "@anthropic-ai/sdk": "^0.72.1",

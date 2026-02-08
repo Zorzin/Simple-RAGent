@@ -99,9 +99,12 @@ export async function summarizeOlderMessages(params: {
   provider: ProviderName;
   model?: string | null;
   apiKey?: string | null;
+  azureEndpoint?: string | null;
+  azureApiVersion?: string | null;
   maxTokens?: number;
 }) {
-  const { sessionId, provider, model, apiKey, maxTokens = 6000 } = params;
+  const { sessionId, provider, model, apiKey, azureEndpoint, azureApiVersion, maxTokens = 6000 } =
+    params;
   const db = getDb();
 
   const [session] = await db
@@ -155,7 +158,7 @@ export async function summarizeOlderMessages(params: {
 
   try {
     const { text: summary } = await generateText({
-      model: getLanguageModel({ provider, model, apiKey }),
+      model: getLanguageModel({ provider, model, apiKey, azureEndpoint, azureApiVersion }),
       system:
         "Summarize the following conversation into a concise paragraph. " +
         "Capture the key topics discussed, any decisions made, and important facts mentioned. " +
