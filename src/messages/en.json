@@ -519,7 +519,7 @@
       "actions": {
         "edit": "Edit",
         "delete": "Delete",
-        "confirmDelete": "Delete this chat?"
+        "confirmDelete": "Are you sure? All data including chat history will be permanently removed."
       },
       "pagination": {
         "pageOf": "Page {page} of {totalPages}",
@@ -582,6 +582,7 @@
       },
       "save": "Save changes",
       "delete": "Delete chat",
+      "confirmDelete": "Are you sure? All data including chat history will be permanently removed.",
       "successTitle": "Changes saved",
       "successMessage": "The chat was updated successfully.",
       "backToList": "Back to list"

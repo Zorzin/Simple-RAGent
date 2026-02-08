@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import ConfirmButton from "@/components/admin/ConfirmButton";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -161,9 +162,14 @@ export default function EditChatForm({
         ) : null}
         <div className="flex items-center gap-2">
           <Button type="submit">{t("save")}</Button>
-          <Button formAction={deleteAction} type="submit" variant="destructive">
+          <ConfirmButton
+            formAction={deleteAction}
+            type="submit"
+            className="inline-flex h-10 items-center justify-center rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
+            confirmText={t("confirmDelete")}
+          >
             {t("delete")}
-          </Button>
+          </ConfirmButton>
         </div>
       </form>
     </Card>

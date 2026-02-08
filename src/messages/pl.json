@@ -519,7 +519,7 @@
       "actions": {
         "edit": "Edytuj",
         "delete": "Usuń",
-        "confirmDelete": "Usunąć ten czat?"
+        "confirmDelete": "Czy na pewno? Wszystkie dane, w tym historia czatu, zostaną trwale usunięte."
       },
       "pagination": {
         "pageOf": "Strona {page} z {totalPages}",
@@ -582,6 +582,7 @@
       },
       "save": "Zapisz zmiany",
       "delete": "Usuń czat",
+      "confirmDelete": "Czy na pewno? Wszystkie dane, w tym historia czatu, zostaną trwale usunięte.",
       "successTitle": "Zmiany zapisane",
       "successMessage": "Czat został zaktualizowany pomyślnie.",
       "backToList": "Wróć do listy"

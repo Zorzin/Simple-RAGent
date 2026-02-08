@@ -12,6 +12,7 @@ import {
   chatFiles,
   chatGroups,
   chatLlmConnectors,
+  chatSessions,
   chatTokenLimits,
   chats,
   fileChunks,
@@ -19,6 +20,7 @@ import {
   groupMembers,
   groups,
   llmConnectors,
+  messages,
   memberInvites,
   members,
   tokenLimits,
@@ -297,6 +299,12 @@ export async function updateChat(formData: FormData) {
 export async function deleteChat(formData: FormData) {
   const id = z.string().uuid().parse(formData.get("id"));
   const db = getDb();
+  await db.delete(chatFiles).where(eq(chatFiles.chatId, id));
+  await db.delete(chatGroups).where(eq(chatGroups.chatId, id));
+  await db.delete(chatLlmConnectors).where(eq(chatLlmConnectors.chatId, id));
+  await db.delete(chatTokenLimits).where(eq(chatTokenLimits.chatId, id));
+  await db.delete(chatSessions).where(eq(chatSessions.chatId, id));
+  await db.delete(messages).where(eq(messages.chatId, id));
   await db.delete(chats).where(eq(chats.id, id));
   revalidatePath("/admin/chats");
   redirect("/admin/chats");
