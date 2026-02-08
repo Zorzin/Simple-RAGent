@@ -132,6 +132,14 @@ export async function POST(request: Request) {
     );
   }
 
+  // Load conversation history BEFORE saving the user message,
+  // so the new message isn't duplicated in the history.
+  const history = await loadSessionWithSummary({
+    sessionId: chatSession.id,
+    maxTokens: 6000,
+    maxMessages: 50,
+  });
+
   // Save user message
   await safeInsertMessage({
     chatId: chat.id,
@@ -155,13 +163,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ role: "assistant", content: fallbackText });
   }
-
-  // Load conversation history
-  const history = await loadSessionWithSummary({
-    sessionId: chatSession.id,
-    maxTokens: 6000,
-    maxMessages: 50,
-  });
 
   // Build tools (only if files are attached)
   const tools =
