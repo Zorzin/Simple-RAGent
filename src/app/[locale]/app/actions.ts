@@ -153,3 +153,33 @@ export async function sendMessage(formData: FormData) {
 
   revalidatePath(`/app/sessions/${session.id}`);
 }
+
+const getSessionTitleSchema = z.object({
+  sessionId: z.string().uuid(),
+});
+
+export async function getSessionTitle(sessionId: string): Promise<string | null> {
+  const { sessionId: validId } = getSessionTitleSchema.parse({ sessionId });
+
+  const db = getDb();
+  const { organization } = await getOrCreateMember();
+  await requireUser();
+
+  const [session] = await db
+    .select({ title: chatSessions.title, chatId: chatSessions.chatId })
+    .from(chatSessions)
+    .where(eq(chatSessions.id, validId))
+    .limit(1);
+
+  if (!session) return null;
+
+  const [chat] = await db
+    .select({ organizationId: chats.organizationId })
+    .from(chats)
+    .where(eq(chats.id, session.chatId))
+    .limit(1);
+
+  if (!chat || chat.organizationId !== organization.id) return null;
+
+  return session.title ?? null;
+}

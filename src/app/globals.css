@@ -137,3 +137,30 @@
     @apply bg-zinc-100/70;
   }
 }
+
+/* Chat dark theme — explicit hex values to avoid oklch/layer issues in Safari */
+.chat-dark {
+  --cd-bg: #09090b;
+  --cd-bg-sidebar: #18181b;
+  --cd-bg-surface: #27272a;
+  --cd-bg-input: #18181b;
+  --cd-border: #27272a;
+  --cd-border-subtle: #3f3f46;
+  --cd-text: #fafafa;
+  --cd-text-secondary: #a1a1aa;
+  --cd-text-muted: #71717a;
+  --cd-accent: #2563eb;
+  --cd-accent-hover: #3b82f6;
+}
+
+.chat-dark,
+.chat-dark *,
+.chat-dark *::before,
+.chat-dark *::after {
+  border-color: var(--cd-border);
+}
+
+.chat-dark {
+  background-color: var(--cd-bg);
+  color: var(--cd-text);
+}

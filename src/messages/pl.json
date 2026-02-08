@@ -18,6 +18,7 @@
       "placeholder": "Zadaj pytanie...",
       "sending": "Wysyłanie...",
       "send": "Wyślij",
+      "inputHelper": "Naciśnij Enter, aby wysłać. Shift+Enter dla nowej linii.",
       "roleUser": "Użytkownik",
       "roleAssistant": "Asystent",
       "fallbackWithContext": "Znalazłem istotny kontekst:\n\n{context}\n\nPodłącz model, aby uzyskać pełną odpowiedź.",
@@ -36,6 +37,8 @@
       "startChat": "Start",
       "history": "Historia",
       "noChatsYet": "Brak czatów. Rozpocznij nowy.",
+      "noResults": "Nie znaleziono pasujących czatów.",
+      "search": "Szukaj czatów...",
       "createError": "Nie udało się utworzyć sesji czatu.",
       "newChatTitle": "Nowy czat"
     },

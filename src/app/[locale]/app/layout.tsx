@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import ChatSidebar from "@/components/app/ChatSidebar";
 import { getDb } from "@/db";
 import { chatSessions, chats, messages } from "@/db/schema";
-import { getActiveOrg } from "@/lib/auth";
+import { auth, getActiveOrg } from "@/lib/auth";
 import { getOrCreateMember } from "@/lib/organization";
 
 type Props = {
@@ -21,6 +21,7 @@ export default async function AppLayout({ children, params }: Props) {
     redirect(`/${locale}/create-organization`);
   }
 
+  const session = await auth();
   const { organization, member } = await getOrCreateMember();
   const db = getDb();
   const [chatRows, sessionRows] = await Promise.all([
@@ -43,8 +44,22 @@ export default async function AppLayout({ children, params }: Props) {
   ]);
 
   return (
-    <div className="flex min-h-screen bg-zinc-50">
-      <aside className="w-80 shrink-0 border-r border-zinc-200 bg-white px-4 py-6">
+    <div
+      className="chat-dark"
+      style={{ height: "100dvh", width: "100%", display: "flex", overflow: "hidden" }}
+    >
+      {/* Sidebar */}
+      <nav
+        style={{
+          width: 280,
+          minWidth: 280,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor: "#18181b",
+          borderRight: "1px solid #27272a",
+        }}
+      >
         <ChatSidebar
           locale={locale}
           chats={chatRows.map((chat) => ({
@@ -52,20 +67,34 @@ export default async function AppLayout({ children, params }: Props) {
             name: chat.name,
             description: chat.description,
           }))}
-          sessions={sessionRows.map((session) => ({
-            id: session.id,
-            chatId: session.chatId,
-            title: session.title || session.chatName || t("newChatTitle"),
+          sessions={sessionRows.map((s) => ({
+            id: s.id,
+            chatId: s.chatId,
+            title: s.title || s.chatName || t("newChatTitle"),
             createdAt:
-              session.lastMessageAt?.toISOString?.().slice(0, 10) ??
-              session.createdAt?.toISOString?.().slice(0, 10) ??
+              s.lastMessageAt?.toISOString?.().slice(0, 10) ??
+              s.createdAt?.toISOString?.().slice(0, 10) ??
               null,
           }))}
+          userName={session?.user?.name ?? null}
+          userEmail={session?.user?.email ?? null}
         />
-      </aside>
-      <main className="flex min-h-screen flex-1 flex-col">
-        <div className="flex-1 px-8 py-6">{children}</div>
-      </main>
+      </nav>
+
+      {/* Main content */}
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor: "#09090b",
+          overflow: "hidden",
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }

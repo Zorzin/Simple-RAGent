@@ -18,6 +18,7 @@
       "placeholder": "Ask a question...",
       "sending": "Sending...",
       "send": "Send",
+      "inputHelper": "Press Enter to send, Shift+Enter for a new line.",
       "roleUser": "User",
       "roleAssistant": "Assistant",
       "fallbackWithContext": "I found relevant context:\n\n{context}\n\nConnect a model to get a full answer.",
@@ -36,6 +37,8 @@
       "startChat": "Start chat",
       "history": "History",
       "noChatsYet": "No chats yet. Start a new one.",
+      "noResults": "No matching chats found.",
+      "search": "Search chats...",
       "createError": "Unable to create chat session.",
       "newChatTitle": "New chat"
     },

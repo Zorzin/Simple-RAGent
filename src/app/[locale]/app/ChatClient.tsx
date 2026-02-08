@@ -5,8 +5,10 @@ import { useChat, type UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useTranslations } from "next-intl";
 
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import ChatHeader from "@/components/app/ChatHeader";
+import ChatMessageList from "@/components/app/ChatMessageList";
+import ChatInput from "@/components/app/ChatInput";
+import { getSessionTitle } from "./actions";
 
 export type ChatMessage = {
   id: string;
@@ -18,18 +20,17 @@ type Props = {
   sessionId: string;
   locale: string;
   initialMessages: ChatMessage[];
+  chatName: string;
+  chatDescription?: string | null;
+  connectorName?: string | null;
+  initialSessionTitle?: string | null;
 };
 
-function getMessageText(message: UIMessage): string {
-  return message.parts
-    .filter((part): part is { type: "text"; text: string } => part.type === "text")
-    .map((part) => part.text)
-    .join("");
-}
-
-export default function ChatClient({ sessionId, locale, initialMessages }: Props) {
+export default function ChatClient({ sessionId, locale, initialMessages, chatName, chatDescription, connectorName, initialSessionTitle }: Props) {
   const t = useTranslations("app.chat");
   const [input, setInput] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [sessionTitle, setSessionTitle] = useState(initialSessionTitle || chatName);
 
   const transport = useMemo(
     () =>
@@ -50,10 +51,17 @@ export default function ChatClient({ sessionId, locale, initialMessages }: Props
         parts: [{ type: "text", text: m.content }],
       }),
     ),
-    onFinish: () => {
+    onError: (err) => {
+      console.error("[chat] useChat error:", err);
+      setSubmitError(err.message || t("sendError"));
+    },
+    onFinish: async () => {
+      setSubmitError(null);
+      const title = await getSessionTitle(sessionId);
+      if (title) setSessionTitle(title);
       if (typeof window !== "undefined") {
         window.dispatchEvent(
-          new CustomEvent("chat-session-activity", { detail: { sessionId } }),
+          new CustomEvent("chat-session-activity", { detail: { sessionId, title } }),
         );
       }
     },
@@ -66,55 +74,37 @@ export default function ChatClient({ sessionId, locale, initialMessages }: Props
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
 
+    setSubmitError(null);
     setInput("");
-    await sendMessage({ text: trimmed });
+    try {
+      await sendMessage({ text: trimmed });
+    } catch (err) {
+      console.error("[chat] sendMessage error:", err);
+      setSubmitError(err instanceof Error ? err.message : t("sendError"));
+    }
   }
 
-  return (
-    <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-      <div className="flex-1 space-y-3 overflow-y-auto p-6">
-        {messages.length === 0 ? (
-          <div className="text-sm text-zinc-500">{t("empty")}</div>
-        ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={
-                message.role === "user"
-                  ? "rounded-lg bg-zinc-100 p-3 text-sm"
-                  : "rounded-lg border border-zinc-200 bg-white p-3 text-sm"
-              }
-            >
-              <div className="text-xs uppercase text-zinc-400">
-                {message.role === "user" ? t("roleUser") : t("roleAssistant")}
-              </div>
-              <div className="mt-1 whitespace-pre-wrap text-zinc-800">
-                {getMessageText(message)}
-              </div>
-            </div>
-          ))
-        )}
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-            {t("sendError")}
-          </div>
-        )}
-      </div>
+  const displayError = submitError || (error ? (error.message || t("sendError")) : null);
 
-      <form onSubmit={handleSubmit} className="border-t border-zinc-200 bg-white p-4">
-        <div className="flex items-end gap-3">
-          <Textarea
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder={t("placeholder")}
-            rows={3}
-            className="flex-1"
-          />
-          <Button type="submit" disabled={isLoading} className="h-10">
-            {isLoading ? t("sending") : t("send")}
-          </Button>
-        </div>
-      </form>
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", backgroundColor: "#09090b" }}>
+      <ChatHeader title={sessionTitle} description={chatDescription} />
+
+      <ChatMessageList
+        messages={messages}
+        emptyText={t("empty")}
+        isStreaming={status === "streaming"}
+        isSubmitted={status === "submitted"}
+        error={displayError}
+      />
+
+      <ChatInput
+        value={input}
+        onChange={setInput}
+        onSubmit={handleSubmit}
+        isLoading={isLoading}
+        connectorName={connectorName}
+      />
     </div>
   );
 }

@@ -1,14 +1,38 @@
 import { getTranslations } from "next-intl/server";
+import { MessageCircleMore } from "lucide-react";
 
 export default async function AppHome() {
   const t = await getTranslations("home");
 
   return (
-    <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-white p-12 text-center">
-      <h1 className="text-2xl font-semibold text-zinc-900">{t("ctaPrimary")}</h1>
-      <p className="mt-3 max-w-xl text-sm text-zinc-600">
-        Select a chat from the left sidebar to get started. Your chat history and available
-        workspaces will show up there.
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        padding: 48,
+        textAlign: "center",
+        backgroundColor: "#09090b",
+      }}
+    >
+      <div
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: 16,
+          backgroundColor: "#27272a",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <MessageCircleMore size={28} strokeWidth={1.5} color="#3b82f6" />
+      </div>
+      <h1 style={{ marginTop: 16, fontSize: 20, fontWeight: 600, color: "#fafafa" }}>{t("ctaPrimary")}</h1>
+      <p style={{ marginTop: 8, maxWidth: 400, fontSize: 14, color: "#71717a" }}>
+        Select a chat from the sidebar to get started, or create a new one.
       </p>
     </div>
   );

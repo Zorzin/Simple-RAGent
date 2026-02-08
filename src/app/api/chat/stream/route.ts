@@ -119,7 +119,7 @@ export async function POST(request: Request) {
   // System prompt: with or without files
   const systemPrompt = fileIds.length > 0 ? tPrompts("systemWithFiles") : tPrompts("system");
 
-  const maxOutputTokens = 800;
+  const maxOutputTokens = 4096;
   const promptTokens = estimateTokens(`${systemPrompt}\n\n${userContent}`);
 
   // Token limit check
@@ -197,6 +197,8 @@ export async function POST(request: Request) {
     stopWhen: stepCountIs(3),
     maxOutputTokens,
     onFinish: async ({ text }) => {
+      console.log("[chat/stream] LLM response:", text);
+
       // Save assistant message
       await safeInsertMessage({
         chatId: chat.id,
