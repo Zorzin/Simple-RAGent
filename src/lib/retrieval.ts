@@ -7,8 +7,9 @@ export async function searchFileChunks(params: {
   query: string;
   limit?: number;
   fileIds?: string[];
+  distanceThreshold?: number;
 }) {
-  const { query, limit = 8, fileIds } = params;
+  const { query, limit = 8, fileIds, distanceThreshold = 0.5 } = params;
   const embedded = await embedText(query);
   if (!embedded || embedded.length === 0) {
     return [];
@@ -16,8 +17,8 @@ export async function searchFileChunks(params: {
   const vector = toVectorLiteral(embedded);
   const db = getDb();
 
-  const whereClause = fileIds?.length
-    ? sql`where file_id in (${sql.join(
+  const fileFilter = fileIds?.length
+    ? sql`and file_id in (${sql.join(
         fileIds.map((id) => sql`${id}`),
         sql`, `,
       )})`
@@ -25,13 +26,20 @@ export async function searchFileChunks(params: {
 
   const rows = await db.execute(
     sql`
-      select file_id, content, (embedding <-> ${vector}) as distance
+      select id, file_id, chunk_index, content, (embedding <=> ${vector}) as distance
       from file_chunks
-      ${whereClause}
-      order by embedding <-> ${vector}
+      where (embedding <=> ${vector}) < ${distanceThreshold}
+      ${fileFilter}
+      order by embedding <=> ${vector}
       limit ${limit}
     `,
   );
 
-  return rows.rows as Array<{ file_id: string; content: string; distance: number }>;
+  return rows.rows as Array<{
+    id: string;
+    file_id: string;
+    chunk_index: number;
+    content: string;
+    distance: number;
+  }>;
 }

@@ -3,6 +3,7 @@ import { messages } from "@/db/schema";
 
 type MessageValues = {
   chatId: string;
+  sessionId?: string | null;
   memberId?: string | null;
   role: string;
   content: string;

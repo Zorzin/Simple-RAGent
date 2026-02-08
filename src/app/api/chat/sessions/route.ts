@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ errorCode: "chatNotFound" }, { status: 404 });
   }
 
-  const [session] = await db
+  const [chatSession] = await db
     .insert(chatSessions)
     .values({
       chatId: chat.id,
@@ -36,8 +36,8 @@ export async function POST(request: Request) {
     .returning();
 
   return NextResponse.json({
-    sessionId: session.id,
-    title: session.title ?? chat.name ?? null,
-    createdAt: session.createdAt?.toISOString?.() ?? null,
+    sessionId: chatSession.id,
+    title: chatSession.title ?? chat.name ?? null,
+    createdAt: chatSession.createdAt?.toISOString?.() ?? null,
   });
 }

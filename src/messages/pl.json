@@ -49,8 +49,8 @@
       "tokenLimit": "Przekroczono limit tokenów. Spróbuj później."
     },
     "prompts": {
-      "system": "Jesteś firmowym asystentem. Gdy to możliwe, korzystaj z dostarczonego kontekstu. Jeśli kontekstu brakuje, odpowiadaj normalnie i zaznacz niepewność.\n\nKontekst:\n{context}",
-      "noContext": "Brak istotnego kontekstu.",
+      "system": "Jesteś firmowym asystentem. Odpowiadaj na pytania jasno i zwięźle. Jeśli nie jesteś pewien, powiedz o tym.",
+      "systemWithFiles": "Jesteś firmowym asystentem z dostępem do wgranych dokumentów firmowych. Używaj narzędzia search_documents, aby wyszukiwać istotne informacje, gdy użytkownik pyta o konkretne tematy, polityki lub treści plików. Odpowiadaj jasno i zwięźle. Jeśli nie możesz znaleźć odpowiedzi w dokumentach, powiedz o tym.",
       "titlePrompt": "Utwórz krótki, opisowy tytuł rozmowy (3–6 słów). Zwróć wyłącznie tytuł.\n\nUżytkownik: {user}\nAsystent: {assistant}",
       "titleSystem": "Jesteś pomocnym asystentem, który tworzy zwięzłe tytuły rozmów."
     }

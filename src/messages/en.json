@@ -49,8 +49,8 @@
       "tokenLimit": "Token limit exceeded. Try again later."
     },
     "prompts": {
-      "system": "You are a company assistant. Use the provided context when relevant. If context is missing, answer normally and mention uncertainty.\n\nContext:\n{context}",
-      "noContext": "No relevant context.",
+      "system": "You are a company assistant. Answer questions clearly and concisely. If you are unsure, say so.",
+      "systemWithFiles": "You are a company assistant with access to uploaded company documents. Use the search_documents tool to look up relevant information when the user asks about specific topics, policies, or file contents. Answer clearly and concisely. If you cannot find the answer in the documents, say so.",
       "titlePrompt": "Create a short, descriptive chat title (3-6 words). Return only the title.\n\nUser: {user}\nAssistant: {assistant}",
       "titleSystem": "You are a helpful assistant that writes concise chat titles."
     }

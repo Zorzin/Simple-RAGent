@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getTranslations } from "next-intl/server";
+import { streamText, stepCountIs } from "ai";
 
 import { getDb } from "@/db";
 import { chatFiles, chatLlmConnectors, chatSessions, chats, llmConnectors } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { estimateTokens } from "@/lib/embeddings";
-import { generateResponse } from "@/lib/llm";
 import { getOrCreateMember } from "@/lib/organization";
-import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
-
-import { searchFileChunks } from "@/lib/retrieval";
 import { getTokenLimitStatus } from "@/lib/token-limits";
 import { safeInsertMessage } from "@/lib/messages";
+import { getLanguageModel, resolveApiKey, type ProviderName } from "@/lib/ai-provider";
+import { generateResponse } from "@/lib/llm";
+import { createSearchDocumentsTool } from "@/lib/tools/search-documents";
+import { loadSessionWithSummary, summarizeOlderMessages } from "@/lib/chat-history";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -22,45 +22,63 @@ export async function POST(request: Request) {
     return NextResponse.json({ errorCode: "unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json()) as { sessionId?: string; content?: string; locale?: string };
-  const locale = body.locale || "en";
+  const body = await request.json();
+
+  // Support both custom format { sessionId, content, locale }
+  // and useChat format { messages: [...], sessionId, locale }
+  const sessionId: string | undefined = body.sessionId;
+  const locale: string = body.locale || "en";
+  const userContent: string | undefined =
+    body.content ||
+    (() => {
+      // Extract last user message from useChat format
+      if (Array.isArray(body.messages)) {
+        const lastUserMsg = [...body.messages].reverse().find((m: { role: string }) => m.role === "user");
+        if (lastUserMsg) {
+          // UIMessage format: has parts array
+          if (Array.isArray(lastUserMsg.parts)) {
+            const textPart = lastUserMsg.parts.find((p: { type: string }) => p.type === "text");
+            return textPart?.text;
+          }
+          // Simple format: has content string
+          return lastUserMsg.content;
+        }
+      }
+      return undefined;
+    })();
+
   const tChat = await getTranslations({ locale, namespace: "app.chat" });
   const tPrompts = await getTranslations({ locale, namespace: "app.prompts" });
 
-  if (!body.sessionId || !body.content) {
+  if (!sessionId || !userContent) {
     return NextResponse.json({ errorCode: "invalidPayload" }, { status: 400 });
   }
 
   const db = getDb();
   const { organization, member } = await getOrCreateMember();
 
-  const [session] = await db
+  const [chatSession] = await db
     .select()
     .from(chatSessions)
-    .where(eq(chatSessions.id, body.sessionId))
+    .where(eq(chatSessions.id, sessionId))
     .limit(1);
-  if (!session) {
+  if (!chatSession) {
     return NextResponse.json({ errorCode: "sessionNotFound" }, { status: 404 });
   }
 
-  const [chat] = await db.select().from(chats).where(eq(chats.id, session.chatId)).limit(1);
+  const [chat] = await db.select().from(chats).where(eq(chats.id, chatSession.chatId)).limit(1);
   if (!chat || chat.organizationId !== organization.id) {
     return NextResponse.json({ errorCode: "chatNotFound" }, { status: 404 });
   }
 
+  // Get file IDs attached to this chat
   const fileRows = await db
     .select({ fileId: chatFiles.fileId })
     .from(chatFiles)
     .where(eq(chatFiles.chatId, chat.id));
-
   const fileIds = fileRows.map((row) => row.fileId);
-  const retrieved = fileIds.length
-    ? await searchFileChunks({ query: body.content, fileIds, limit: 5 })
-    : [];
 
-  const context = retrieved.map((chunk, index) => `#${index + 1}: ${chunk.content}`).join("\n\n");
-  const contextText = context || tPrompts("noContext");
-
+  // Get LLM connector
   const connectorRows = await db
     .select({
       provider: llmConnectors.provider,
@@ -75,7 +93,7 @@ export async function POST(request: Request) {
     (
       row,
     ): row is {
-      provider: "anthropic" | "openai" | "mistral" | "azure_openai" | "copilot" | "custom";
+      provider: ProviderName;
       model: string | null;
       apiKey: string | null;
     } => Boolean(row.provider),
@@ -87,28 +105,19 @@ export async function POST(request: Request) {
     availableConnectors.find((row) => row.provider === "copilot") ||
     availableConnectors[0];
 
-  const systemPrompt = tPrompts("system", { context: contextText });
-  const maxOutputTokens = 800;
-  const promptTokens = estimateTokens(`${systemPrompt}\n\n${body.content}`);
+  const resolvedKey = resolveApiKey(connector?.provider, connector?.apiKey);
 
-  const resolvedApiKey =
-    connector?.provider === "anthropic"
-      ? connector.apiKey || process.env.ANTHROPIC_API_KEY
-      : connector?.provider === "openai"
-        ? connector.apiKey || process.env.OPENAI_API_KEY
-        : connector?.provider === "copilot"
-          ? connector.apiKey || process.env.GITHUB_TOKEN
-          : connector?.apiKey || null;
-
-  if (connector?.provider && !resolvedApiKey) {
-    return NextResponse.json(
-      {
-        errorCode: "missingApiKey",
-      },
-      { status: 400 },
-    );
+  if (connector?.provider && !resolvedKey) {
+    return NextResponse.json({ errorCode: "missingApiKey" }, { status: 400 });
   }
 
+  // System prompt: with or without files
+  const systemPrompt = fileIds.length > 0 ? tPrompts("systemWithFiles") : tPrompts("system");
+
+  const maxOutputTokens = 800;
+  const promptTokens = estimateTokens(`${systemPrompt}\n\n${userContent}`);
+
+  // Token limit check
   const limitStatus = await getTokenLimitStatus({
     organizationId: organization.id,
     memberId: member.id,
@@ -118,174 +127,112 @@ export async function POST(request: Request) {
 
   if (limitStatus.blocked) {
     return NextResponse.json(
-      {
-        errorCode: "tokenLimit",
-        limits: limitStatus.items,
-      },
+      { errorCode: "tokenLimit", limits: limitStatus.items },
       { status: 429 },
     );
   }
 
+  // Save user message
   await safeInsertMessage({
     chatId: chat.id,
-    sessionId: session.id,
+    sessionId: chatSession.id,
     memberId: member.id,
     role: "user",
-    content: body.content,
+    content: userContent,
     tokenCount: promptTokens,
   });
 
-  const encoder = new TextEncoder();
-  let finalText = "";
+  // No connector: fallback response
+  if (!connector?.provider) {
+    const fallbackText = tChat("fallbackNoModel");
+    await safeInsertMessage({
+      chatId: chat.id,
+      sessionId: chatSession.id,
+      memberId: member.id,
+      role: "assistant",
+      content: fallbackText,
+      tokenCount: estimateTokens(fallbackText),
+    });
+    return NextResponse.json({ role: "assistant", content: fallbackText });
+  }
+
+  // Load conversation history
+  const history = await loadSessionWithSummary({
+    sessionId: chatSession.id,
+    maxTokens: 6000,
+    maxMessages: 50,
+  });
+
+  // Build tools (only if files are attached)
+  const tools =
+    fileIds.length > 0 ? { search_documents: createSearchDocumentsTool(fileIds) } : undefined;
+
   const shouldGenerateTitle =
-    !session.title || session.title.trim().length === 0 || session.title === chat.name;
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        if (!connector?.provider) {
-          const fallback = context
-            ? tChat("fallbackWithContext", { context })
-            : tChat("fallbackNoModel");
-          finalText = fallback;
-          controller.enqueue(encoder.encode(`data: ${fallback}\n\n`));
-          controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
-          controller.close();
-          await safeInsertMessage({
-            chatId: chat.id,
-            sessionId: session.id,
-            memberId: member.id,
-            role: "assistant",
-            content: finalText,
-            tokenCount: estimateTokens(finalText),
+    !chatSession.title ||
+    chatSession.title.trim().length === 0 ||
+    chatSession.title === chat.name;
+
+  const provider = connector.provider;
+  const connectorModel = connector.model;
+
+  const result = streamText({
+    model: getLanguageModel({ provider, model: connectorModel, apiKey: resolvedKey }),
+    system: systemPrompt,
+    messages: [...history, { role: "user" as const, content: userContent }],
+    tools,
+    stopWhen: stepCountIs(3),
+    maxOutputTokens,
+    onFinish: async ({ text }) => {
+      // Save assistant message
+      await safeInsertMessage({
+        chatId: chat.id,
+        sessionId: chatSession.id,
+        memberId: member.id,
+        role: "assistant",
+        content: text,
+        tokenCount: estimateTokens(text),
+      });
+
+      // Generate title if needed
+      if (shouldGenerateTitle) {
+        try {
+          const titlePrompt = tPrompts("titlePrompt", {
+            user: userContent,
+            assistant: text,
           });
-          return;
+          const title = await generateResponse({
+            provider,
+            model: connectorModel,
+            apiKey: resolvedKey,
+            system: tPrompts("titleSystem"),
+            user: titlePrompt,
+            maxOutputTokens: 20,
+          });
+
+          const cleaned = title
+            .trim()
+            .replace(/^"|"$/g, "")
+            .slice(0, 80);
+          if (cleaned) {
+            await db
+              .update(chatSessions)
+              .set({ title: cleaned })
+              .where(eq(chatSessions.id, chatSession.id));
+          }
+        } catch {
+          // Ignore title generation errors
         }
-
-        if (connector.provider === "anthropic") {
-          const client = new Anthropic({
-            apiKey: resolvedApiKey,
-          });
-          const streamResponse = await client.messages.create({
-            model: connector.model || process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20240620",
-            max_tokens: maxOutputTokens,
-            system: systemPrompt,
-            messages: [{ role: "user", content: body.content }],
-            stream: true,
-          });
-
-          for await (const event of streamResponse) {
-            if (event.type === "content_block_delta") {
-              const delta = (event as { delta?: { text?: string } }).delta?.text;
-              if (delta) {
-                finalText += delta;
-                controller.enqueue(encoder.encode(`data: ${delta}\n\n`));
-              }
-            }
-          }
-        } else if (connector.provider === "openai") {
-          const client = new OpenAI({
-            apiKey: resolvedApiKey,
-          });
-          const streamResponse = await client.responses.create({
-            model: connector.model || process.env.OPENAI_MODEL || "gpt-4o-mini",
-            input: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: body.content },
-            ],
-            max_output_tokens: maxOutputTokens,
-            stream: true,
-          });
-
-          for await (const event of streamResponse) {
-            if (event.type === "response.output_text.delta") {
-              const delta = (event as { delta?: string }).delta;
-              if (delta) {
-                finalText += delta;
-                controller.enqueue(encoder.encode(`data: ${delta}\n\n`));
-              }
-            }
-          }
-        } else if (connector.provider === "copilot") {
-          const client = new OpenAI({
-            apiKey: resolvedApiKey,
-            baseURL: process.env.GITHUB_COPILOT_BASE_URL || "https://api.githubcopilot.com",
-          });
-          const streamResponse = await client.chat.completions.create({
-            model: connector.model || process.env.GITHUB_COPILOT_MODEL || "gpt-4o",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: body.content },
-            ],
-            max_tokens: maxOutputTokens,
-            stream: true,
-          });
-
-          for await (const chunk of streamResponse) {
-            const delta = chunk.choices?.[0]?.delta?.content;
-            if (delta) {
-              finalText += delta;
-              controller.enqueue(encoder.encode(`data: ${delta}\n\n`));
-            }
-          }
-        } else {
-          const fallback = tChat("unsupportedProvider");
-          finalText = fallback;
-          controller.enqueue(encoder.encode(`data: ${fallback}\n\n`));
-        }
-
-        controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
-        controller.close();
-
-        await safeInsertMessage({
-          chatId: chat.id,
-          sessionId: session.id,
-          memberId: member.id,
-          role: "assistant",
-          content: finalText,
-          tokenCount: estimateTokens(finalText),
-        });
-
-        if (shouldGenerateTitle && connector?.provider) {
-          try {
-            const titlePrompt = tPrompts("titlePrompt", {
-              user: body.content,
-              assistant: finalText,
-            });
-            const title = await generateResponse({
-              provider: connector.provider,
-              model: connector.model,
-              apiKey: resolvedApiKey,
-              system: tPrompts("titleSystem"),
-              user: titlePrompt,
-              maxOutputTokens: 20,
-            });
-
-            const cleaned = title
-              .trim()
-              .replace(/^\"|\"$/g, "")
-              .slice(0, 80);
-            if (cleaned) {
-              await db
-                .update(chatSessions)
-                .set({ title: cleaned })
-                .where(eq(chatSessions.id, session.id));
-            }
-          } catch {
-            // Ignore title generation errors.
-          }
-        }
-      } catch {
-        controller.enqueue(encoder.encode(`data: [ERROR]\n\n`));
-        controller.close();
       }
+
+      // Deferred summarization (non-blocking)
+      summarizeOlderMessages({
+        sessionId: chatSession.id,
+        provider,
+        model: connectorModel,
+        apiKey: resolvedKey,
+      }).catch(() => {});
     },
   });
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-    },
-  });
+  return result.toUIMessageStreamResponse();
 }

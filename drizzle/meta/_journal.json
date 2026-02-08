@@ -8,6 +8,20 @@
       "when": 1770540201406,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770626601406,
+      "tag": "0001_chat_summary_and_cosine_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770545285443,
+      "tag": "0002_hard_nova",
+      "breakpoints": true
     }
   ]
 }

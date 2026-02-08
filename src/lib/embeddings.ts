@@ -1,3 +1,5 @@
+import OpenAI from "openai";
+
 const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDINGS_MODEL || "text-embedding-3-small";
 export const EMBEDDING_DIM = Number(process.env.OPENAI_EMBEDDINGS_DIM || 1536);
 
@@ -18,8 +20,16 @@ export function chunkText(input: string, maxChars = 1500, overlap = 200) {
   return chunks;
 }
 
-export async function embedTexts(texts: string[]) {
+function getOpenAIClient() {
   if (!process.env.OPENAI_API_KEY) {
+    return null;
+  }
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+export async function embedTexts(texts: string[]) {
+  const client = getOpenAIClient();
+  if (!client) {
     console.warn("OPENAI_API_KEY is not configured. Skipping embeddings.");
     return [] as number[][];
   }
@@ -28,26 +38,13 @@ export async function embedTexts(texts: string[]) {
     return [] as number[][];
   }
 
-  const response = await fetch("https://api.openai.com/v1/embeddings", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: EMBEDDING_MODEL,
-      input: texts,
-      dimensions: EMBEDDING_DIM,
-    }),
+  const response = await client.embeddings.create({
+    model: EMBEDDING_MODEL,
+    input: texts,
+    dimensions: EMBEDDING_DIM,
   });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`OpenAI embeddings error: ${error}`);
-  }
-
-  const data = (await response.json()) as { data?: Array<{ embedding: number[] }> };
-  return data.data?.map((item) => item.embedding) ?? [];
+  return response.data.map((item) => item.embedding);
 }
 
 export async function embedText(text: string) {

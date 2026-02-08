@@ -12,11 +12,15 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.38",
+    "@ai-sdk/openai": "^3.0.26",
+    "@ai-sdk/react": "^3.0.79",
     "@anthropic-ai/sdk": "^0.72.1",
     "@auth/drizzle-adapter": "^1.11.1",
     "@aws-sdk/client-s3": "^3.981.0",
     "@aws-sdk/s3-request-presigner": "^3.981.0",
     "@neondatabase/serverless": "^1.0.2",
+    "ai": "^6.0.77",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -400,6 +400,8 @@ export const chatSessions = pgTable(
       .notNull(),
     memberId: uuid("member_id").references(() => members.id),
     title: text("title"),
+    summary: text("summary"),
+    summaryUpToId: uuid("summary_up_to_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({

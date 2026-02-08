@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useChat, type UIMessage } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -18,97 +20,54 @@ type Props = {
   initialMessages: ChatMessage[];
 };
 
+function getMessageText(message: UIMessage): string {
+  return message.parts
+    .filter((part): part is { type: "text"; text: string } => part.type === "text")
+    .map((part) => part.text)
+    .join("");
+}
+
 export default function ChatClient({ sessionId, locale, initialMessages }: Props) {
   const t = useTranslations("app.chat");
-  const tErrors = useTranslations("app.errors");
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
-  const [isSending, setIsSending] = useState(false);
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat/stream",
+        body: { sessionId, locale },
+      }),
+    [sessionId, locale],
+  );
+
+  const { messages, sendMessage, status, error } = useChat({
+    id: `chat-${sessionId}`,
+    transport,
+    messages: initialMessages.map(
+      (m): UIMessage => ({
+        id: m.id,
+        role: m.role as UIMessage["role"],
+        parts: [{ type: "text", text: m.content }],
+      }),
+    ),
+    onFinish: () => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("chat-session-activity", { detail: { sessionId } }),
+        );
+      }
+    },
+  });
+
+  const isLoading = status === "streaming" || status === "submitted";
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     const trimmed = input.trim();
-    if (!trimmed || isSending) return;
+    if (!trimmed || isLoading) return;
 
-    setIsSending(true);
     setInput("");
-
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: trimmed,
-    };
-
-    const assistantId = `assistant-${Date.now()}`;
-    const assistantMessage: ChatMessage = {
-      id: assistantId,
-      role: "assistant",
-      content: "",
-    };
-
-    setMessages((prev) => [...prev, userMessage, assistantMessage]);
-
-    const response = await fetch("/api/chat/stream", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId, content: trimmed, locale }),
-    });
-
-    if (!response.ok) {
-      let errorMessage = t("sendError");
-      try {
-        const data = (await response.json()) as { errorCode?: string };
-        if (data?.errorCode) {
-          errorMessage = tErrors(data.errorCode);
-        }
-      } catch {
-        // ignore parsing error
-      }
-
-      setMessages((prev) =>
-        prev.map((msg) => (msg.id === assistantId ? { ...msg, content: errorMessage } : msg)),
-      );
-      setIsSending(false);
-      return;
-    }
-
-    if (!response.body) {
-      setIsSending(false);
-      return;
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop() || "";
-
-      for (const part of parts) {
-        const line = part.replace(/^data:\s?/, "");
-        if (!line) continue;
-        if (line === "[DONE]") {
-          setIsSending(false);
-          return;
-        }
-
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === assistantId ? { ...msg, content: `${msg.content}${line}` } : msg,
-          ),
-        );
-      }
-    }
-
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("chat-session-activity", { detail: { sessionId } }));
-    }
-    setIsSending(false);
+    await sendMessage({ text: trimmed });
   }
 
   return (
@@ -129,9 +88,16 @@ export default function ChatClient({ sessionId, locale, initialMessages }: Props
               <div className="text-xs uppercase text-zinc-400">
                 {message.role === "user" ? t("roleUser") : t("roleAssistant")}
               </div>
-              <div className="mt-1 whitespace-pre-wrap text-zinc-800">{message.content}</div>
+              <div className="mt-1 whitespace-pre-wrap text-zinc-800">
+                {getMessageText(message)}
+              </div>
             </div>
           ))
+        )}
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+            {t("sendError")}
+          </div>
         )}
       </div>
 
@@ -144,8 +110,8 @@ export default function ChatClient({ sessionId, locale, initialMessages }: Props
             rows={3}
             className="flex-1"
           />
-          <Button type="submit" disabled={isSending} className="h-10">
-            {isSending ? t("sending") : t("send")}
+          <Button type="submit" disabled={isLoading} className="h-10">
+            {isLoading ? t("sending") : t("send")}
           </Button>
         </div>
       </form>
