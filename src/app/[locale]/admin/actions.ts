@@ -372,6 +372,8 @@ export async function updateGroup(formData: FormData) {
 export async function deleteGroup(formData: FormData) {
   const id = z.string().uuid().parse(formData.get("id"));
   const db = getDb();
+  await db.delete(groupMembers).where(eq(groupMembers.groupId, id));
+  await db.delete(chatGroups).where(eq(chatGroups.groupId, id));
   await db.delete(groups).where(eq(groups.id, id));
   revalidatePath("/admin/groups");
   redirect("/admin/groups");
@@ -451,6 +453,7 @@ export async function updateConnector(formData: FormData) {
 export async function deleteConnector(formData: FormData) {
   const id = z.string().uuid().parse(formData.get("id"));
   const db = getDb();
+  await db.delete(chatLlmConnectors).where(eq(chatLlmConnectors.connectorId, id));
   await db.delete(llmConnectors).where(eq(llmConnectors.id, id));
   revalidatePath("/admin/connectors");
   redirect("/admin/connectors");
@@ -666,6 +669,7 @@ export async function deleteFile(formData: FormData) {
   if (file?.storageKey) {
     await deleteFromR2(file.storageKey);
   }
+  await db.delete(chatFiles).where(eq(chatFiles.fileId, id));
   await db.delete(fileChunks).where(eq(fileChunks.fileId, id));
   await db.delete(files).where(eq(files.id, id));
   revalidatePath("/admin/files");
@@ -888,6 +892,10 @@ export async function deleteMemberRole(formData: FormData) {
   const membershipId = z.string().parse(formData.get("membershipId"));
 
   const db = getDb();
+  await db.delete(groupMembers).where(eq(groupMembers.memberId, membershipId));
+  await db.delete(tokenLimits).where(eq(tokenLimits.memberId, membershipId));
+  await db.delete(chatSessions).where(eq(chatSessions.memberId, membershipId));
+  await db.delete(messages).where(eq(messages.memberId, membershipId));
   await db
     .delete(members)
     .where(and(eq(members.id, membershipId), eq(members.organizationId, organization.id)));
