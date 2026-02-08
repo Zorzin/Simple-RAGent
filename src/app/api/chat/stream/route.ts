@@ -16,7 +16,8 @@ import { getTokenLimitStatus } from "@/lib/token-limits";
 import { safeInsertMessage } from "@/lib/messages";
 
 export async function POST(request: Request) {
-  const { userId } = await auth();
+  const session = await auth();
+  const userId = session?.user?.id;
   if (!userId) {
     return NextResponse.json({ errorCode: "unauthorized" }, { status: 401 });
   }
@@ -110,7 +111,6 @@ export async function POST(request: Request) {
 
   const limitStatus = await getTokenLimitStatus({
     organizationId: organization.id,
-    clerkUserId: member.clerkUserId,
     memberId: member.id,
     chatId: chat.id,
     tokensToConsume: promptTokens + maxOutputTokens,

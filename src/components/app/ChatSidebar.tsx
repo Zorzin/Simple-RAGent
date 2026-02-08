@@ -116,9 +116,7 @@ export default function ChatSidebar({ locale, chats, sessions }: Props) {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
             <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl">
               <div className="text-lg font-semibold text-zinc-900">{t("startNewChatTitle")}</div>
-              <p className="mt-1 text-sm text-zinc-600">
-                {t("startNewChatDescription")}
-              </p>
+              <p className="mt-1 text-sm text-zinc-600">{t("startNewChatDescription")}</p>
               <div className="mt-4 space-y-2">
                 <label className="text-xs font-semibold text-zinc-500">{t("chatType")}</label>
                 <select

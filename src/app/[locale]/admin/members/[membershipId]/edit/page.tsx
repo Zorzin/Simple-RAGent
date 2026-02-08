@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
 import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireAdmin } from "@/lib/admin";
-import { fetchOrgMemberships } from "@/lib/clerk-org";
+import { fetchOrgMemberships } from "@/lib/org-members";
 
 import { deleteMemberRole, updateMemberRole } from "../../../actions";
 
@@ -17,9 +16,8 @@ type Props = {
 export default async function EditMemberPage({ params }: Props) {
   const { locale, membershipId } = await params;
   const t = await getTranslations({ locale, namespace: "admin.membersEdit" });
-  await requireAdmin();
-  const { orgId } = await auth();
-  const memberships = orgId ? await fetchOrgMemberships(orgId) : [];
+  const { organization } = await requireAdmin();
+  const memberships = await fetchOrgMemberships(organization.id);
   const member = memberships.find((item) => item.id === membershipId);
 
   if (!member) {
@@ -68,8 +66,8 @@ export default async function EditMemberPage({ params }: Props) {
             defaultValue={member.role}
             className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
           >
-            <option value="org:member">{t("roles.member")}</option>
-            <option value="org:admin">{t("roles.admin")}</option>
+            <option value="member">{t("roles.member")}</option>
+            <option value="admin">{t("roles.admin")}</option>
           </select>
           <div className="flex items-center gap-2">
             <Button type="submit">{t("updateRole")}</Button>

@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
 import { getTranslations } from "next-intl/server";
+import { eq } from "drizzle-orm";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getDb } from "@/db";
+import { members } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
-import { fetchOrgMemberships } from "@/lib/clerk-org";
 
 import { setTokenLimit } from "../../actions";
 
@@ -18,9 +19,12 @@ type Props = {
 export default async function NewLimitPage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "admin.limitsNew" });
-  await requireAdmin();
-  const { orgId } = await auth();
-  const memberships = orgId ? await fetchOrgMemberships(orgId) : [];
+  const { organization } = await requireAdmin();
+  const db = getDb();
+  const memberships = await db
+    .select()
+    .from(members)
+    .where(eq(members.organizationId, organization.id));
 
   return (
     <div className="space-y-6">
@@ -47,13 +51,13 @@ export default async function NewLimitPage({ params }: Props) {
       <Card className="space-y-4 p-6">
         <form action={setTokenLimit} className="space-y-3">
           <select
-            name="clerkUserId"
+            name="memberId"
             className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
             required
           >
             {memberships.map((membership) => (
-              <option key={membership.id} value={membership.userId}>
-                {membership.identifier || t("anonymous")}
+              <option key={membership.id} value={membership.id}>
+                {membership.displayName ?? membership.email ?? t("anonymous")}
               </option>
             ))}
           </select>

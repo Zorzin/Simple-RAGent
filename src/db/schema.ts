@@ -3,6 +3,7 @@ import {
   index,
   integer,
   jsonb,
+  primaryKey,
   pgEnum,
   pgTable,
   text,
@@ -10,6 +11,7 @@ import {
   uuid,
   uniqueIndex,
   customType,
+  bigint,
 } from "drizzle-orm/pg-core";
 
 export const memberRole = pgEnum("member_role", ["admin", "member"]);
@@ -23,16 +25,86 @@ export const llmProvider = pgEnum("llm_provider", [
   "custom",
 ]);
 
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name"),
+    email: text("email"),
+    emailVerified: timestamp("email_verified", { withTimezone: true }),
+    image: text("image"),
+    passwordHash: text("password_hash"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    emailIdx: uniqueIndex("users_email_idx").on(table.email),
+  }),
+);
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id)
+      .notNull(),
+    type: text("type").notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("provider_account_id").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: bigint("expires_at", { mode: "number" }),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (table) => ({
+    userIdx: index("accounts_user_idx").on(table.userId),
+    providerIdx: uniqueIndex("accounts_provider_idx").on(table.provider, table.providerAccountId),
+  }),
+);
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sessionToken: text("session_token").notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id)
+      .notNull(),
+    expires: timestamp("expires", { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    sessionTokenIdx: uniqueIndex("sessions_token_idx").on(table.sessionToken),
+    userIdx: index("sessions_user_idx").on(table.userId),
+  }),
+);
+
+export const verificationTokens = pgTable(
+  "verification_tokens",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.identifier, table.token] }),
+  }),
+);
+
 export const organizations = pgTable(
   "organizations",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    clerkOrgId: text("clerk_org_id").notNull(),
     name: text("name").notNull(),
+    slug: text("slug"),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    clerkOrgIdx: uniqueIndex("organizations_clerk_org_idx").on(table.clerkOrgId),
+    slugIdx: uniqueIndex("organizations_slug_idx").on(table.slug),
   }),
 );
 
@@ -43,9 +115,9 @@ export const members = pgTable(
     organizationId: uuid("organization_id")
       .references(() => organizations.id)
       .notNull(),
-    clerkUserId: text("clerk_user_id").notNull(),
-    clerkOrgId: text("clerk_org_id").notNull(),
-    orgRole: text("org_role"),
+    userId: uuid("user_id")
+      .references(() => users.id)
+      .notNull(),
     email: text("email"),
     displayName: text("display_name"),
     role: memberRole("role").default("member").notNull(),
@@ -53,8 +125,8 @@ export const members = pgTable(
   },
   (table) => ({
     organizationIdx: index("members_org_idx").on(table.organizationId),
-    clerkIdx: index("members_clerk_idx").on(table.clerkUserId),
-    clerkOrgIdx: index("members_clerk_org_idx").on(table.clerkOrgId),
+    userIdx: index("members_user_idx").on(table.userId),
+    orgUserIdx: uniqueIndex("members_org_user_idx").on(table.organizationId, table.userId),
   }),
 );
 
@@ -262,13 +334,39 @@ export const tokenLimits = pgTable(
     organizationId: uuid("organization_id")
       .references(() => organizations.id)
       .notNull(),
-    clerkUserId: text("clerk_user_id").notNull(),
+    memberId: uuid("member_id")
+      .references(() => members.id)
+      .notNull(),
     interval: tokenInterval("interval").notNull(),
     limitTokens: integer("limit_tokens").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    memberIdx: index("token_limits_member_idx").on(table.clerkUserId),
+    memberIdx: index("token_limits_member_idx").on(table.memberId),
+  }),
+);
+
+export const memberInvites = pgTable(
+  "member_invites",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .references(() => organizations.id)
+      .notNull(),
+    email: text("email").notNull(),
+    role: memberRole("role").default("member").notNull(),
+    token: text("token").notNull(),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id),
+    acceptedByUserId: uuid("accepted_by_user_id").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (table) => ({
+    orgIdx: index("member_invites_org_idx").on(table.organizationId),
+    tokenIdx: uniqueIndex("member_invites_token_idx").on(table.token),
+    emailIdx: index("member_invites_email_idx").on(table.email),
   }),
 );
 

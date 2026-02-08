@@ -1,6 +1,9 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
+import { eq } from "drizzle-orm";
 
-export { auth };
+import { getDb } from "@/db";
+import { members } from "@/db/schema";
 
 export type SessionUser = {
   userId: string;
@@ -8,24 +11,43 @@ export type SessionUser = {
   name: string | null;
 };
 
-export async function requireUser(): Promise<SessionUser> {
-  const { userId } = await auth();
+export async function auth() {
+  return getServerSession(authOptions);
+}
 
+export async function requireUser(): Promise<SessionUser> {
+  const session = await auth();
+  const userId = session?.user?.id;
   if (!userId) {
     throw new Error("AUTH_UNAUTHORIZED");
   }
 
-  const user = await currentUser();
-
   return {
     userId,
-    email: user?.emailAddresses?.[0]?.emailAddress ?? null,
-    name: user?.fullName ?? user?.firstName ?? user?.username ?? null,
+    email: session?.user?.email ?? null,
+    name: session?.user?.name ?? null,
   };
 }
 
 export async function getActiveOrg() {
-  const { orgId, orgRole } = await auth();
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    return { orgId: null, orgRole: null };
+  }
 
-  return { orgId, orgRole };
+  const db = getDb();
+  const [member] = await db
+    .select({
+      orgId: members.organizationId,
+      role: members.role,
+    })
+    .from(members)
+    .where(eq(members.userId, userId))
+    .limit(1);
+
+  return {
+    orgId: member?.orgId ?? null,
+    orgRole: member?.role ?? null,
+  };
 }

@@ -37,7 +37,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
     ? and(
         eq(tokenLimits.organizationId, organization.id),
         ilike(
-          sql`coalesce(${members.displayName}, ${members.email}, ${members.clerkUserId})`,
+          sql`coalesce(${members.displayName}, ${members.email}, ${members.userId})`,
           `%${query}%`,
         ),
       )
@@ -56,7 +56,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
     db
       .select({
         id: tokenLimits.id,
-        clerkUserId: tokenLimits.clerkUserId,
+        memberId: tokenLimits.memberId,
         interval: tokenLimits.interval,
         limitTokens: tokenLimits.limitTokens,
         createdAt: tokenLimits.createdAt,
@@ -64,7 +64,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
         email: members.email,
       })
       .from(tokenLimits)
-      .leftJoin(members, eq(members.clerkUserId, tokenLimits.clerkUserId))
+      .leftJoin(members, eq(members.id, tokenLimits.memberId))
       .where(whereClause)
       .orderBy(orderByClause)
       .limit(limit)
@@ -72,7 +72,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
     db
       .select({ count: sql<number>`count(*)` })
       .from(tokenLimits)
-      .leftJoin(members, eq(members.clerkUserId, tokenLimits.clerkUserId))
+      .leftJoin(members, eq(members.id, tokenLimits.memberId))
       .where(whereClause),
   ]);
 
@@ -89,9 +89,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
-            <p className="mt-2 text-sm text-zinc-600">
-              {t("subtitle")}
-            </p>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <form className="flex gap-2" method="get">
@@ -151,7 +149,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
                 limitRows.map((limitRow) => (
                   <tr key={limitRow.id} className="border-t border-zinc-200">
                     <td className="px-4 py-3 text-zinc-900">
-                      {limitRow.displayName ?? limitRow.email ?? limitRow.clerkUserId}
+                      {limitRow.displayName ?? limitRow.email ?? limitRow.memberId}
                     </td>
                     <td className="px-4 py-3 text-zinc-500">
                       {t(`interval.${limitRow.interval}`)}
@@ -187,9 +185,7 @@ export default async function LimitsPage({ params, searchParams }: Props) {
         </div>
         {totalPages > 1 ? (
           <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
-            <span>
-              {t("pagination.pageOf", { page, totalPages })}
-            </span>
+            <span>{t("pagination.pageOf", { page, totalPages })}</span>
             <div className="flex items-center gap-2">
               <Link
                 className="rounded-md border border-zinc-200 px-2 py-1"

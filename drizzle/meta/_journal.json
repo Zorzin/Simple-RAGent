@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770115910899,
-      "tag": "0000_tidy_charles_xavier",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1770118420593,
-      "tag": "0001_hesitant_retro_girl",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1770119604434,
-      "tag": "0002_reflective_lady_ursula",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1770126551940,
-      "tag": "0003_optimal_the_watchers",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1770127066483,
-      "tag": "0004_luxuriant_gambit",
+      "when": 1770540201406,
+      "tag": "0000_init",
       "breakpoints": true
     }
   ]

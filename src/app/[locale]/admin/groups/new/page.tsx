@@ -61,7 +61,7 @@ export default async function NewGroupPage({ params }: Props) {
                   <label key={member.id} className="flex items-center gap-2 py-1">
                     <input type="checkbox" name="memberIds" value={member.id} />
                     <span className="text-zinc-700">
-                      {member.displayName ?? member.email ?? member.clerkUserId}
+                      {member.displayName ?? member.email ?? member.userId}
                     </span>
                   </label>
                 ))

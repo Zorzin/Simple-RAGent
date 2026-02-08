@@ -79,9 +79,7 @@ export default async function FilesPage({ params, searchParams }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
-            <p className="mt-2 text-sm text-zinc-600">
-              {t("subtitle")}
-            </p>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <form className="flex gap-2" method="get">
@@ -141,9 +139,7 @@ export default async function FilesPage({ params, searchParams }: Props) {
                 rows.map((file) => (
                   <tr key={file.id} className="border-t border-zinc-200">
                     <td className="px-4 py-3 text-zinc-900">{file.name}</td>
-                    <td className="px-4 py-3 text-zinc-500">
-                      {file.mimeType ?? t("unknownType")}
-                    </td>
+                    <td className="px-4 py-3 text-zinc-500">{file.mimeType ?? t("unknownType")}</td>
                     <td className="px-4 py-3 text-zinc-500">
                       {file.createdAt?.toISOString?.().slice(0, 10) ?? "—"}
                     </td>
@@ -168,7 +164,9 @@ export default async function FilesPage({ params, searchParams }: Props) {
                             className="text-xs font-medium text-zinc-600 hover:text-zinc-900"
                             confirmText={t("actions.confirmEmbed")}
                           >
-                            {Number(file.chunkCount) > 0 ? t("actions.reEmbed") : t("actions.embed")}
+                            {Number(file.chunkCount) > 0
+                              ? t("actions.reEmbed")
+                              : t("actions.embed")}
                           </ConfirmButton>
                         </form>
                         <form action={deleteFile}>
@@ -190,9 +188,7 @@ export default async function FilesPage({ params, searchParams }: Props) {
         </div>
         {totalPages > 1 ? (
           <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
-            <span>
-              {t("pagination.pageOf", { page, totalPages })}
-            </span>
+            <span>{t("pagination.pageOf", { page, totalPages })}</span>
             <div className="flex items-center gap-2">
               <Link
                 className="rounded-md border border-zinc-200 px-2 py-1"

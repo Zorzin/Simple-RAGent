@@ -78,7 +78,7 @@ export default async function EditGroupPage({ params }: Props) {
                       defaultChecked={groupMemberIds.has(member.id)}
                     />
                     <span className="text-zinc-700">
-                      {member.displayName ?? member.email ?? member.clerkUserId}
+                      {member.displayName ?? member.email ?? member.userId}
                     </span>
                   </label>
                 ))

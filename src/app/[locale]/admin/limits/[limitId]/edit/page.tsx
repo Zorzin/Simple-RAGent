@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getDb } from "@/db";
-import { tokenLimits } from "@/db/schema";
+import { members, tokenLimits } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
 
 import { deleteTokenLimit, updateTokenLimit } from "../../../actions";
@@ -23,8 +23,16 @@ export default async function EditLimitPage({ params }: Props) {
   await requireAdmin();
   const db = getDb();
   const [limitRow] = await db
-    .select()
+    .select({
+      id: tokenLimits.id,
+      memberId: tokenLimits.memberId,
+      interval: tokenLimits.interval,
+      limitTokens: tokenLimits.limitTokens,
+      displayName: members.displayName,
+      email: members.email,
+    })
     .from(tokenLimits)
+    .leftJoin(members, eq(members.id, tokenLimits.memberId))
     .where(eq(tokenLimits.id, limitId))
     .limit(1);
 
@@ -58,7 +66,7 @@ export default async function EditLimitPage({ params }: Props) {
         <form action={updateTokenLimit} className="space-y-3">
           <input type="hidden" name="id" value={limitRow.id} />
           <div className="text-xs text-zinc-500">
-            {t("user", { id: limitRow.clerkUserId })}
+            {t("user", { id: limitRow.displayName ?? limitRow.email ?? limitRow.memberId })}
           </div>
           <div className="text-xs text-zinc-500">
             {t("intervalLabel", { interval: t(`interval.${limitRow.interval}`) })}

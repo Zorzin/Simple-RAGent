@@ -35,9 +35,7 @@ export default function InviteMemberForm({ locale, action }: Props) {
       <Card className="space-y-4 p-6" key={`success-${formKey}`}>
         <div>
           <h2 className="text-lg font-semibold text-zinc-900">{t("successTitle")}</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            {t("successMessage")}
-          </p>
+          <p className="mt-1 text-sm text-zinc-600">{t("successMessage")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -65,14 +63,15 @@ export default function InviteMemberForm({ locale, action }: Props) {
         className="space-y-3"
         onSubmit={() => setDismissed(false)}
       >
+        <input type="hidden" name="locale" value={locale} />
         <Input name="emailAddress" placeholder={t("emailPlaceholder")} required />
         <select
           name="role"
           className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
           required
         >
-          <option value="org:member">{t("roles.member")}</option>
-          <option value="org:admin">{t("roles.admin")}</option>
+          <option value="member">{t("roles.member")}</option>
+          <option value="admin">{t("roles.admin")}</option>
         </select>
         {state?.error ? <p className="text-sm text-red-500">{state.error}</p> : null}
         <Button type="submit">{t("submit")}</Button>

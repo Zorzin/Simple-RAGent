@@ -63,9 +63,7 @@ export default async function ChatsPage({ params, searchParams }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
-            <p className="mt-2 text-sm text-zinc-600">
-              {t("subtitle")}
-            </p>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <form className="flex gap-2" method="get">
@@ -155,9 +153,7 @@ export default async function ChatsPage({ params, searchParams }: Props) {
         </div>
         {totalPages > 1 ? (
           <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
-            <span>
-              {t("pagination.pageOf", { page, totalPages })}
-            </span>
+            <span>{t("pagination.pageOf", { page, totalPages })}</span>
             <div className="flex items-center gap-2">
               <Link
                 className="rounded-md border border-zinc-200 px-2 py-1"

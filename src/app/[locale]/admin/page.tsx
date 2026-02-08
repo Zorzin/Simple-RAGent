@@ -16,7 +16,11 @@ export default async function AdminOverview({ params }: Props) {
     { href: "/admin/chats", title: t("links.chats.title"), description: t("links.chats.desc") },
     { href: "/admin/files", title: t("links.files.title"), description: t("links.files.desc") },
     { href: "/admin/groups", title: t("links.groups.title"), description: t("links.groups.desc") },
-    { href: "/admin/members", title: t("links.members.title"), description: t("links.members.desc") },
+    {
+      href: "/admin/members",
+      title: t("links.members.title"),
+      description: t("links.members.desc"),
+    },
     {
       href: "/admin/connectors",
       title: t("links.connectors.title"),

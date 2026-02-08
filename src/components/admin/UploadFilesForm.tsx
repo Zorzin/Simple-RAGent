@@ -107,9 +107,7 @@ export default function UploadFilesForm({ locale, action }: Props) {
           onDrop={handleDrop}
         >
           <div className="text-sm font-medium text-zinc-900">{t("dropzoneTitle")}</div>
-          <div className="mt-2 text-xs text-zinc-500">
-            {t("dropzoneHint")}
-          </div>
+          <div className="mt-2 text-xs text-zinc-500">{t("dropzoneHint")}</div>
           <Button
             type="button"
             variant="outline"

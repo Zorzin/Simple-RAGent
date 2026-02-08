@@ -111,7 +111,6 @@ export async function sendMessage(formData: FormData) {
 
   const limitStatus = await getTokenLimitStatus({
     organizationId: organization.id,
-    clerkUserId: member.clerkUserId,
     memberId: member.id,
     chatId: chat.id,
     tokensToConsume: promptTokens + maxOutputTokens,

@@ -55,8 +55,7 @@ export default async function EditFilePage({ params }: Props) {
           <input type="hidden" name="id" value={file.id} />
           <Input name="name" defaultValue={file.name} />
           <div className="text-xs text-zinc-500">
-            {file.mimeType ?? t("unknownType")} · {file.size ?? 0} {t("bytes")} ·{" "}
-            {file.storageKey}
+            {file.mimeType ?? t("unknownType")} · {file.size ?? 0} {t("bytes")} · {file.storageKey}
           </div>
           <div className="flex items-center gap-2">
             <Button type="submit">{t("save")}</Button>

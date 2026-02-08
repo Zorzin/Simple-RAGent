@@ -7,7 +7,8 @@ import { auth } from "@/lib/auth";
 import { getOrCreateMember } from "@/lib/organization";
 
 export async function POST(request: Request) {
-  const { userId } = await auth();
+  const session = await auth();
+  const userId = session?.user?.id;
   if (!userId) {
     return NextResponse.json({ errorCode: "unauthorized" }, { status: 401 });
   }

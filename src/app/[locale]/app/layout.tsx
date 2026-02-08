@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import { desc, eq, sql } from "drizzle-orm";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
@@ -6,6 +5,7 @@ import { redirect } from "next/navigation";
 import ChatSidebar from "@/components/app/ChatSidebar";
 import { getDb } from "@/db";
 import { chatSessions, chats, messages } from "@/db/schema";
+import { getActiveOrg } from "@/lib/auth";
 import { getOrCreateMember } from "@/lib/organization";
 
 type Props = {
@@ -16,7 +16,7 @@ type Props = {
 export default async function AppLayout({ children, params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "app.sidebar" });
-  const { orgId } = await auth();
+  const { orgId } = await getActiveOrg();
   if (!orgId) {
     redirect(`/${locale}/create-organization`);
   }

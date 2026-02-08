@@ -34,12 +34,11 @@ function startOfInterval(date: Date, interval: TokenInterval) {
 
 export async function getTokenLimitStatus(params: {
   organizationId: string;
-  clerkUserId: string;
   memberId: string;
   chatId?: string;
   tokensToConsume: number;
 }) {
-  const { organizationId, clerkUserId, memberId, chatId, tokensToConsume } = params;
+  const { organizationId, memberId, chatId, tokensToConsume } = params;
   const db = getDb();
   const limits = await db
     .select({
@@ -47,9 +46,7 @@ export async function getTokenLimitStatus(params: {
       limitTokens: tokenLimits.limitTokens,
     })
     .from(tokenLimits)
-    .where(
-      and(eq(tokenLimits.organizationId, organizationId), eq(tokenLimits.clerkUserId, clerkUserId)),
-    );
+    .where(and(eq(tokenLimits.organizationId, organizationId), eq(tokenLimits.memberId, memberId)));
 
   const now = new Date();
   const items = await Promise.all(

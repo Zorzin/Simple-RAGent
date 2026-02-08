@@ -1,7 +1,9 @@
 # AI Instructions
+
 - Read this file at the start of each session.
 
 ## Project overview
+
 Private, company-only AI chat with admin-managed context, access control, and usage limits.
 
 ## Stack
@@ -14,11 +16,12 @@ Private, company-only AI chat with admin-managed context, access control, and us
 - Cloudflare R2
 - OpenAI embeddings
 
-
 ## Development Commands
 
 ### Build and server start:
+
 _Note - Do not run this commands if not asked otherwise._
+
 ```bash
 # Development server with Turbopack
 pnpm dev
@@ -33,6 +36,7 @@ pnpm start
 ### Listing and formatting:
 
 _Note - Run this commands at the end of every finished job_
+
 ```bash
 # Linting
 pnpm lint
@@ -63,6 +67,7 @@ pnpm db:migrate
 - Always use TypeScript for type safety and better code maintainability.
 
 ### Backend
+
 - Make sure to always use server-side actions if it is possible.
 - Do not create API endpoints within Next.js project if it is not 100% necessary.
 - Use server-side actions for any operations that require database access or complex logic.

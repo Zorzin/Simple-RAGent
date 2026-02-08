@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
 import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { requireAdmin } from "@/lib/admin";
-import { fetchOrgInvitations, fetchOrgMemberships } from "@/lib/clerk-org";
+import { fetchOrgInvitations, fetchOrgMemberships } from "@/lib/org-members";
 import { buildPageHref, getPageParams, getTotalPages } from "@/lib/pagination";
 
 import { deleteMemberRole, resendInvitation, revokeInvitation } from "../actions";
@@ -23,12 +22,11 @@ export default async function MembersPage({ params, searchParams }: Props) {
   const t = await getTranslations({ locale, namespace: "admin.members" });
   const { page, limit, offset } = getPageParams((await searchParams).page);
   const query = (await searchParams).q?.trim().toLowerCase() ?? "";
-  await requireAdmin();
-  const { orgId } = await auth();
+  const { organization } = await requireAdmin();
 
   const [memberships, invitations] = await Promise.all([
-    orgId ? fetchOrgMemberships(orgId) : Promise.resolve([]),
-    orgId ? fetchOrgInvitations(orgId) : Promise.resolve([]),
+    fetchOrgMemberships(organization.id),
+    fetchOrgInvitations(organization.id),
   ]);
 
   const filteredMembers = query
@@ -48,9 +46,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-zinc-900">{t("title")}</h1>
-            <p className="mt-2 text-sm text-zinc-600">
-              {t("subtitle")}
-            </p>
+            <p className="mt-2 text-sm text-zinc-600">{t("subtitle")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <form className="flex gap-2" method="get">
@@ -93,7 +89,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
                       {membership.identifier || t("anonymous")}
                     </td>
                     <td className="px-4 py-3 text-zinc-500">
-                      {membership.role === "org:admin" ? t("roles.admin") : t("roles.member")}
+                      {membership.role === "admin" ? t("roles.admin") : t("roles.member")}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
@@ -122,9 +118,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
         </div>
         {totalPages > 1 ? (
           <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
-            <span>
-              {t("pagination.pageOf", { page, totalPages })}
-            </span>
+            <span>{t("pagination.pageOf", { page, totalPages })}</span>
             <div className="flex items-center gap-2">
               <Link
                 className="rounded-md border border-zinc-200 px-2 py-1"
@@ -162,7 +156,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
                 <div>
                   <div className="font-medium text-zinc-900">{invite.emailAddress}</div>
                   <div className="text-xs text-zinc-500">
-                    {invite.role === "org:admin" ? t("roles.admin") : t("roles.member")}
+                    {invite.role === "admin" ? t("roles.admin") : t("roles.member")}
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-zinc-400">
@@ -171,6 +165,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
                     <input type="hidden" name="invitationId" value={invite.id} />
                     <input type="hidden" name="emailAddress" value={invite.emailAddress} />
                     <input type="hidden" name="role" value={invite.role} />
+                    <input type="hidden" name="locale" value={locale} />
                     <ConfirmButton
                       className="text-xs font-medium text-zinc-600 hover:text-zinc-900"
                       confirmText={t("actions.confirmResend")}
