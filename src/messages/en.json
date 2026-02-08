@@ -148,7 +148,11 @@
       "title": "New connector",
       "subtitle": "Add a new model connector.",
       "back": "Back",
-      "submit": "Add connector"
+      "submit": "Add connector",
+      "successTitle": "Connector created",
+      "successMessage": "The connector was created successfully.",
+      "createAnother": "Create another",
+      "backToList": "Back to list"
     },
     "connectorsEdit": {
       "breadcrumbs": {
@@ -160,7 +164,10 @@
       "subtitle": "Update connector details.",
       "back": "Back",
       "save": "Save changes",
-      "delete": "Delete connector"
+      "delete": "Delete connector",
+      "successTitle": "Changes saved",
+      "successMessage": "The connector was updated successfully.",
+      "backToList": "Back to list"
     },
     "connectorFields": {
       "providers": {
@@ -243,7 +250,11 @@
       },
       "limitPlaceholder": "Limit tokens",
       "submit": "Save limit",
-      "anonymous": "Unknown member"
+      "anonymous": "Unknown member",
+      "successTitle": "Limit created",
+      "successMessage": "The token limit was created successfully.",
+      "createAnother": "Create another",
+      "backToList": "Back to list"
     },
     "limitsEdit": {
       "breadcrumbs": {
@@ -262,7 +273,10 @@
       },
       "save": "Save changes",
       "delete": "Delete limit",
-      "intervalLabel": "Interval: {interval}"
+      "intervalLabel": "Interval: {interval}",
+      "successTitle": "Changes saved",
+      "successMessage": "The token limit was updated successfully.",
+      "backToList": "Back to list"
     },
     "groups": {
       "breadcrumbs": {
@@ -303,7 +317,11 @@
       "namePlaceholder": "Group name",
       "assignMembers": "Assign members",
       "noMembers": "No members yet.",
-      "submit": "Create group"
+      "submit": "Create group",
+      "successTitle": "Group created",
+      "successMessage": "The group was created successfully.",
+      "createAnother": "Create another",
+      "backToList": "Back to list"
     },
     "groupsEdit": {
       "breadcrumbs": {
@@ -317,7 +335,10 @@
       "assignMembers": "Assign members",
       "noMembers": "No members yet.",
       "save": "Save changes",
-      "delete": "Delete group"
+      "delete": "Delete group",
+      "successTitle": "Changes saved",
+      "successMessage": "The group was updated successfully.",
+      "backToList": "Back to list"
     },
     "files": {
       "breadcrumbs": {
@@ -378,7 +399,10 @@
       "unknownType": "unknown",
       "bytes": "bytes",
       "save": "Save changes",
-      "delete": "Delete file"
+      "delete": "Delete file",
+      "successTitle": "Changes saved",
+      "successMessage": "The file was renamed successfully.",
+      "backToList": "Back to list"
     },
     "upload": {
       "successTitle": "Upload complete",
@@ -470,7 +494,10 @@
       },
       "updateRole": "Update role",
       "remove": "Remove member",
-      "anonymous": "Unknown member"
+      "anonymous": "Unknown member",
+      "successTitle": "Changes saved",
+      "successMessage": "The member role was updated successfully.",
+      "backToList": "Back to list"
     },
     "chats": {
       "breadcrumbs": {
@@ -525,7 +552,11 @@
         "month": "Monthly limit",
         "example": "e.g. 20000"
       },
-      "submit": "Create chat"
+      "submit": "Create chat",
+      "successTitle": "Chat created",
+      "successMessage": "The chat was created successfully.",
+      "createAnother": "Create another",
+      "backToList": "Back to list"
     },
     "chatsEdit": {
       "breadcrumbs": {
@@ -550,7 +581,10 @@
         "month": "Monthly limit"
       },
       "save": "Save changes",
-      "delete": "Delete chat"
+      "delete": "Delete chat",
+      "successTitle": "Changes saved",
+      "successMessage": "The chat was updated successfully.",
+      "backToList": "Back to list"
     }
   }
 }

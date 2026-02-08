@@ -5,8 +5,7 @@ import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import EditLimitForm from "@/components/admin/EditLimitForm";
 import { getDb } from "@/db";
 import { members, tokenLimits } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
@@ -40,6 +39,9 @@ export default async function EditLimitPage({ params }: Props) {
     notFound();
   }
 
+  const userLabel = t("user", { id: limitRow.displayName ?? limitRow.email ?? limitRow.memberId });
+  const intervalLabel = t("intervalLabel", { interval: t(`interval.${limitRow.interval}`) });
+
   return (
     <div className="space-y-6">
       <Breadcrumbs
@@ -62,24 +64,15 @@ export default async function EditLimitPage({ params }: Props) {
         </div>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <form action={updateTokenLimit} className="space-y-3">
-          <input type="hidden" name="id" value={limitRow.id} />
-          <div className="text-xs text-zinc-500">
-            {t("user", { id: limitRow.displayName ?? limitRow.email ?? limitRow.memberId })}
-          </div>
-          <div className="text-xs text-zinc-500">
-            {t("intervalLabel", { interval: t(`interval.${limitRow.interval}`) })}
-          </div>
-          <Input name="limitTokens" defaultValue={limitRow.limitTokens} />
-          <div className="flex items-center gap-2">
-            <Button type="submit">{t("save")}</Button>
-            <Button formAction={deleteTokenLimit} type="submit" variant="destructive">
-              {t("delete")}
-            </Button>
-          </div>
-        </form>
-      </Card>
+      <EditLimitForm
+        locale={locale}
+        limitId={limitRow.id}
+        userLabel={userLabel}
+        intervalLabel={intervalLabel}
+        limitTokens={limitRow.limitTokens}
+        action={updateTokenLimit}
+        deleteAction={deleteTokenLimit}
+      />
     </div>
   );
 }

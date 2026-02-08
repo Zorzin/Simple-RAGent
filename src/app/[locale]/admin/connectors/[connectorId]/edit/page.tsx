@@ -5,8 +5,7 @@ import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import ConnectorFields from "@/components/admin/ConnectorFields";
+import EditConnectorForm from "@/components/admin/EditConnectorForm";
 import { getDb } from "@/db";
 import { llmConnectors } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
@@ -54,24 +53,17 @@ export default async function EditConnectorPage({ params }: Props) {
         </div>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <form action={updateConnector} className="space-y-3">
-          <input type="hidden" name="id" value={connector.id} />
-          <ConnectorFields
-            initialName={connector.name}
-            initialProvider={connector.provider}
-            initialModel={connector.model ?? ""}
-            initialAzureEndpoint={connector.azureEndpoint}
-            initialAzureApiVersion={connector.azureApiVersion}
-          />
-          <div className="flex items-center gap-2">
-            <Button type="submit">{t("save")}</Button>
-            <Button formAction={deleteConnector} type="submit" variant="destructive">
-              {t("delete")}
-            </Button>
-          </div>
-        </form>
-      </Card>
+      <EditConnectorForm
+        locale={locale}
+        connectorId={connector.id}
+        initialName={connector.name}
+        initialProvider={connector.provider}
+        initialModel={connector.model ?? ""}
+        initialAzureEndpoint={connector.azureEndpoint}
+        initialAzureApiVersion={connector.azureApiVersion}
+        action={updateConnector}
+        deleteAction={deleteConnector}
+      />
     </div>
   );
 }

@@ -5,8 +5,7 @@ import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import EditFileForm from "@/components/admin/EditFileForm";
 import { getDb } from "@/db";
 import { files } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
@@ -27,6 +26,8 @@ export default async function EditFilePage({ params }: Props) {
   if (!file) {
     notFound();
   }
+
+  const fileMeta = `${file.mimeType ?? t("unknownType")} · ${file.size ?? 0} ${t("bytes")} · ${file.storageKey}`;
 
   return (
     <div className="space-y-6">
@@ -50,21 +51,14 @@ export default async function EditFilePage({ params }: Props) {
         </div>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <form action={renameFile} className="space-y-3">
-          <input type="hidden" name="id" value={file.id} />
-          <Input name="name" defaultValue={file.name} />
-          <div className="text-xs text-zinc-500">
-            {file.mimeType ?? t("unknownType")} · {file.size ?? 0} {t("bytes")} · {file.storageKey}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button type="submit">{t("save")}</Button>
-            <Button formAction={deleteFile} type="submit" variant="destructive">
-              {t("delete")}
-            </Button>
-          </div>
-        </form>
-      </Card>
+      <EditFileForm
+        locale={locale}
+        fileId={file.id}
+        fileName={file.name}
+        fileMeta={fileMeta}
+        action={renameFile}
+        deleteAction={deleteFile}
+      />
     </div>
   );
 }

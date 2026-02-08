@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import EditMemberForm from "@/components/admin/EditMemberForm";
 import { requireAdmin } from "@/lib/admin";
 import { fetchOrgMemberships } from "@/lib/org-members";
 
@@ -52,31 +52,15 @@ export default async function EditMemberPage({ params }: Props) {
         </div>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <div>
-          <div className="text-sm font-medium text-zinc-900">
-            {member.identifier || t("anonymous")}
-          </div>
-          <div className="text-xs text-zinc-500">{member.userId}</div>
-        </div>
-        <form action={updateMemberRole} className="space-y-3">
-          <input type="hidden" name="membershipId" value={member.id} />
-          <select
-            name="role"
-            defaultValue={member.role}
-            className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
-          >
-            <option value="member">{t("roles.member")}</option>
-            <option value="admin">{t("roles.admin")}</option>
-          </select>
-          <div className="flex items-center gap-2">
-            <Button type="submit">{t("updateRole")}</Button>
-            <Button formAction={deleteMemberRole} type="submit" variant="destructive">
-              {t("remove")}
-            </Button>
-          </div>
-        </form>
-      </Card>
+      <EditMemberForm
+        locale={locale}
+        membershipId={member.id}
+        identifier={member.identifier || ""}
+        userId={member.userId}
+        currentRole={member.role}
+        action={updateMemberRole}
+        deleteAction={deleteMemberRole}
+      />
     </div>
   );
 }

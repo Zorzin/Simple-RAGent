@@ -4,8 +4,7 @@ import { eq } from "drizzle-orm";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import CreateLimitForm from "@/components/admin/CreateLimitForm";
 import { getDb } from "@/db";
 import { members } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
@@ -48,32 +47,15 @@ export default async function NewLimitPage({ params }: Props) {
         </div>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <form action={setTokenLimit} className="space-y-3">
-          <select
-            name="memberId"
-            className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
-            required
-          >
-            {memberships.map((membership) => (
-              <option key={membership.id} value={membership.id}>
-                {membership.displayName ?? membership.email ?? t("anonymous")}
-              </option>
-            ))}
-          </select>
-          <select
-            name="interval"
-            className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm"
-            required
-          >
-            <option value="day">{t("interval.day")}</option>
-            <option value="week">{t("interval.week")}</option>
-            <option value="month">{t("interval.month")}</option>
-          </select>
-          <Input name="limitTokens" type="number" placeholder={t("limitPlaceholder")} required />
-          <Button type="submit">{t("submit")}</Button>
-        </form>
-      </Card>
+      <CreateLimitForm
+        locale={locale}
+        action={setTokenLimit}
+        memberships={memberships.map((m) => ({
+          id: m.id,
+          displayName: m.displayName,
+          email: m.email,
+        }))}
+      />
     </div>
   );
 }

@@ -148,7 +148,11 @@
       "title": "Nowy konektor",
       "subtitle": "Dodaj nowy konektor modelu.",
       "back": "Wstecz",
-      "submit": "Dodaj konektor"
+      "submit": "Dodaj konektor",
+      "successTitle": "Konektor utworzony",
+      "successMessage": "Konektor został utworzony pomyślnie.",
+      "createAnother": "Utwórz kolejny",
+      "backToList": "Wróć do listy"
     },
     "connectorsEdit": {
       "breadcrumbs": {
@@ -160,7 +164,10 @@
       "subtitle": "Zaktualizuj dane konektora.",
       "back": "Wstecz",
       "save": "Zapisz zmiany",
-      "delete": "Usuń konektor"
+      "delete": "Usuń konektor",
+      "successTitle": "Zmiany zapisane",
+      "successMessage": "Konektor został zaktualizowany pomyślnie.",
+      "backToList": "Wróć do listy"
     },
     "connectorFields": {
       "providers": {
@@ -243,7 +250,11 @@
       },
       "limitPlaceholder": "Limit tokenów",
       "submit": "Zapisz limit",
-      "anonymous": "Nieznany członek"
+      "anonymous": "Nieznany członek",
+      "successTitle": "Limit utworzony",
+      "successMessage": "Limit tokenów został utworzony pomyślnie.",
+      "createAnother": "Utwórz kolejny",
+      "backToList": "Wróć do listy"
     },
     "limitsEdit": {
       "breadcrumbs": {
@@ -262,7 +273,10 @@
       },
       "save": "Zapisz zmiany",
       "delete": "Usuń limit",
-      "intervalLabel": "Okres: {interval}"
+      "intervalLabel": "Okres: {interval}",
+      "successTitle": "Zmiany zapisane",
+      "successMessage": "Limit tokenów został zaktualizowany pomyślnie.",
+      "backToList": "Wróć do listy"
     },
     "groups": {
       "breadcrumbs": {
@@ -303,7 +317,11 @@
       "namePlaceholder": "Nazwa grupy",
       "assignMembers": "Przypisz członków",
       "noMembers": "Brak członków.",
-      "submit": "Utwórz grupę"
+      "submit": "Utwórz grupę",
+      "successTitle": "Grupa utworzona",
+      "successMessage": "Grupa została utworzona pomyślnie.",
+      "createAnother": "Utwórz kolejną",
+      "backToList": "Wróć do listy"
     },
     "groupsEdit": {
       "breadcrumbs": {
@@ -317,7 +335,10 @@
       "assignMembers": "Przypisz członków",
       "noMembers": "Brak członków.",
       "save": "Zapisz zmiany",
-      "delete": "Usuń grupę"
+      "delete": "Usuń grupę",
+      "successTitle": "Zmiany zapisane",
+      "successMessage": "Grupa została zaktualizowana pomyślnie.",
+      "backToList": "Wróć do listy"
     },
     "files": {
       "breadcrumbs": {
@@ -378,7 +399,10 @@
       "unknownType": "nieznany",
       "bytes": "bajty",
       "save": "Zapisz zmiany",
-      "delete": "Usuń plik"
+      "delete": "Usuń plik",
+      "successTitle": "Zmiany zapisane",
+      "successMessage": "Nazwa pliku została zmieniona pomyślnie.",
+      "backToList": "Wróć do listy"
     },
     "upload": {
       "successTitle": "Przesyłanie zakończone",
@@ -470,7 +494,10 @@
       },
       "updateRole": "Zaktualizuj rolę",
       "remove": "Usuń członka",
-      "anonymous": "Nieznany członek"
+      "anonymous": "Nieznany członek",
+      "successTitle": "Zmiany zapisane",
+      "successMessage": "Rola członka została zaktualizowana pomyślnie.",
+      "backToList": "Wróć do listy"
     },
     "chats": {
       "breadcrumbs": {
@@ -525,7 +552,11 @@
         "month": "Limit miesięczny",
         "example": "np. 20000"
       },
-      "submit": "Utwórz czat"
+      "submit": "Utwórz czat",
+      "successTitle": "Czat utworzony",
+      "successMessage": "Czat został utworzony pomyślnie.",
+      "createAnother": "Utwórz kolejny",
+      "backToList": "Wróć do listy"
     },
     "chatsEdit": {
       "breadcrumbs": {
@@ -550,7 +581,10 @@
         "month": "Limit miesięczny"
       },
       "save": "Zapisz zmiany",
-      "delete": "Usuń czat"
+      "delete": "Usuń czat",
+      "successTitle": "Zmiany zapisane",
+      "successMessage": "Czat został zaktualizowany pomyślnie.",
+      "backToList": "Wróć do listy"
     }
   }
 }

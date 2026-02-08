@@ -3,8 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import CreateGroupForm from "@/components/admin/CreateGroupForm";
 import { getDb } from "@/db";
 import { members } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
@@ -48,29 +47,16 @@ export default async function NewGroupPage({ params }: Props) {
         </div>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <form action={createGroup} className="space-y-4">
-          <Input name="name" placeholder={t("namePlaceholder")} required />
-          <div className="space-y-2">
-            <div className="text-xs font-semibold text-zinc-500">{t("assignMembers")}</div>
-            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
-              {memberRows.length === 0 ? (
-                <div className="text-zinc-500">{t("noMembers")}</div>
-              ) : (
-                memberRows.map((member) => (
-                  <label key={member.id} className="flex items-center gap-2 py-1">
-                    <input type="checkbox" name="memberIds" value={member.id} />
-                    <span className="text-zinc-700">
-                      {member.displayName ?? member.email ?? member.userId}
-                    </span>
-                  </label>
-                ))
-              )}
-            </div>
-          </div>
-          <Button type="submit">{t("submit")}</Button>
-        </form>
-      </Card>
+      <CreateGroupForm
+        locale={locale}
+        action={createGroup}
+        memberRows={memberRows.map((m) => ({
+          id: m.id,
+          displayName: m.displayName,
+          email: m.email,
+          userId: m.userId,
+        }))}
+      />
     </div>
   );
 }

@@ -5,8 +5,7 @@ import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import EditGroupForm from "@/components/admin/EditGroupForm";
 import { getDb } from "@/db";
 import { groupMembers, groups, members } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
@@ -35,7 +34,6 @@ export default async function EditGroupPage({ params }: Props) {
       .from(groupMembers)
       .where(eq(groupMembers.groupId, group.id)),
   ]);
-  const groupMemberIds = new Set(groupMemberRows.map((row) => row.memberId));
 
   return (
     <div className="space-y-6">
@@ -59,40 +57,20 @@ export default async function EditGroupPage({ params }: Props) {
         </div>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <form action={updateGroup} className="space-y-4">
-          <input type="hidden" name="id" value={group.id} />
-          <Input name="name" defaultValue={group.name} required />
-          <div className="space-y-2">
-            <div className="text-xs font-semibold text-zinc-500">{t("assignMembers")}</div>
-            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
-              {memberRows.length === 0 ? (
-                <div className="text-zinc-500">{t("noMembers")}</div>
-              ) : (
-                memberRows.map((member) => (
-                  <label key={member.id} className="flex items-center gap-2 py-1">
-                    <input
-                      type="checkbox"
-                      name="memberIds"
-                      value={member.id}
-                      defaultChecked={groupMemberIds.has(member.id)}
-                    />
-                    <span className="text-zinc-700">
-                      {member.displayName ?? member.email ?? member.userId}
-                    </span>
-                  </label>
-                ))
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button type="submit">{t("save")}</Button>
-            <Button formAction={deleteGroup} type="submit" variant="destructive">
-              {t("delete")}
-            </Button>
-          </div>
-        </form>
-      </Card>
+      <EditGroupForm
+        locale={locale}
+        groupId={group.id}
+        groupName={group.name}
+        action={updateGroup}
+        deleteAction={deleteGroup}
+        memberRows={memberRows.map((m) => ({
+          id: m.id,
+          displayName: m.displayName,
+          email: m.email,
+          userId: m.userId,
+        }))}
+        selectedMemberIds={groupMemberRows.map((row) => row.memberId)}
+      />
     </div>
   );
 }

@@ -3,8 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import Breadcrumbs from "@/components/admin/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import ConnectorFields from "@/components/admin/ConnectorFields";
+import CreateConnectorForm from "@/components/admin/CreateConnectorForm";
 import { requireAdmin } from "@/lib/admin";
 
 import { createConnector } from "../../actions";
@@ -40,12 +39,7 @@ export default async function NewConnectorPage({ params }: Props) {
         </div>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <form action={createConnector} className="space-y-3">
-          <ConnectorFields />
-          <Button type="submit">{t("submit")}</Button>
-        </form>
-      </Card>
+      <CreateConnectorForm locale={locale} action={createConnector} />
     </div>
   );
 }
