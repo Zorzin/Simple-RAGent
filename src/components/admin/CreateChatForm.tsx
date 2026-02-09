@@ -27,7 +27,13 @@ type Props = {
   connectorRows: ConnectorRow[];
 };
 
-export default function CreateChatForm({ locale, action, groupRows, fileRows, connectorRows }: Props) {
+export default function CreateChatForm({
+  locale,
+  action,
+  groupRows,
+  fileRows,
+  connectorRows,
+}: Props) {
   const t = useTranslations("admin.chatsNew");
   const [state, formAction] = useActionState(
     async (_prevState: ActionResult, formData: FormData) => action(formData),

@@ -132,15 +132,20 @@ export default function ChatSidebar({ locale, chats, sessions, userName, userEma
   }
 
   const filteredSessions = searchQuery.trim()
-    ? sessionItems.filter((s) =>
-        s.title.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+    ? sessionItems.filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
     : sessionItems;
 
   const groupedSessions = useMemo(() => groupSessionsByDate(filteredSessions), [filteredSessions]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "16px 12px 12px" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        padding: "16px 12px 12px",
+      }}
+    >
       {/* Brand */}
       <div style={{ padding: "0 4px 12px", fontSize: 14, fontWeight: 600, color: "#fafafa" }}>
         Simple Ragent
@@ -178,7 +183,13 @@ export default function ChatSidebar({ locale, chats, sessions, userName, userEma
         <Search
           size={14}
           strokeWidth={1.5}
-          style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#71717a" }}
+          style={{
+            position: "absolute",
+            left: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "#71717a",
+          }}
         />
         <input
           type="text"
@@ -210,7 +221,9 @@ export default function ChatSidebar({ locale, chats, sessions, userName, userEma
         ) : (
           groupedSessions.map((group) => (
             <div key={group.label} style={{ marginBottom: 4 }}>
-              <div style={{ padding: "12px 8px 4px", fontSize: 11, fontWeight: 500, color: "#71717a" }}>
+              <div
+                style={{ padding: "12px 8px 4px", fontSize: 11, fontWeight: 500, color: "#71717a" }}
+              >
                 {group.label}
               </div>
               {group.items.map((session) => {
@@ -243,7 +256,16 @@ export default function ChatSidebar({ locale, chats, sessions, userName, userEma
       </div>
 
       {/* User info */}
-      <div style={{ borderTop: "1px solid #27272a", paddingTop: 12, marginTop: 8, display: "flex", alignItems: "center", gap: 10 }}>
+      <div
+        style={{
+          borderTop: "1px solid #27272a",
+          paddingTop: 12,
+          marginTop: 8,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
         <div
           style={{
             width: 32,
@@ -262,11 +284,28 @@ export default function ChatSidebar({ locale, chats, sessions, userName, userEma
           {(userName ?? "U").charAt(0).toUpperCase()}
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: "#e4e4e7", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: "#e4e4e7",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {userName ?? "User"}
           </div>
           {userEmail && (
-            <div style={{ fontSize: 11, color: "#71717a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div
+              style={{
+                fontSize: 11,
+                color: "#71717a",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
               {userEmail}
             </div>
           )}
@@ -297,10 +336,24 @@ export default function ChatSidebar({ locale, chats, sessions, userName, userEma
               padding: 24,
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 600, color: "#fafafa" }}>{t("startNewChatTitle")}</div>
-            <p style={{ marginTop: 4, fontSize: 14, color: "#a1a1aa" }}>{t("startNewChatDescription")}</p>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "#fafafa" }}>
+              {t("startNewChatTitle")}
+            </div>
+            <p style={{ marginTop: 4, fontSize: 14, color: "#a1a1aa" }}>
+              {t("startNewChatDescription")}
+            </p>
             <div style={{ marginTop: 16 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#a1a1aa", marginBottom: 6 }}>{t("chatType")}</label>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#a1a1aa",
+                  marginBottom: 6,
+                }}
+              >
+                {t("chatType")}
+              </label>
               <select
                 value={selectedChat}
                 onChange={(event) => setSelectedChat(event.target.value)}
@@ -322,7 +375,9 @@ export default function ChatSidebar({ locale, chats, sessions, userName, userEma
                 ))}
               </select>
             </div>
-            {createError && <p style={{ marginTop: 12, fontSize: 12, color: "#f87171" }}>{createError}</p>}
+            {createError && (
+              <p style={{ marginTop: 12, fontSize: 12, color: "#f87171" }}>{createError}</p>
+            )}
             <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button
                 type="button"

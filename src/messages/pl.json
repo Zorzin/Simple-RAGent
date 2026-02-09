@@ -84,6 +84,31 @@
       "title": "Panel admina",
       "welcome": "Witaj ponownie, {name}. Wybierz sekcję, którą chcesz zarządzać.",
       "fallbackName": "administrator",
+      "stats": {
+        "chats": "Łączna liczba czatów",
+        "members": "Łączna liczba członków",
+        "totalTokens": "Łączne zużycie tokenów",
+        "activeUsers": "Aktywni użytkownicy (7d)",
+        "filesTitle": "Statystyki plików",
+        "fileCount": "Pliki",
+        "totalSize": "Łączny rozmiar",
+        "chunkCount": "Fragmenty",
+        "activityTitle": "Ostatnia aktywność",
+        "activeMembers": "Aktywni członkowie",
+        "activeSessions": "Nowe sesje",
+        "last7days": "Ostatnie 7 dni",
+        "tokensByChat": "Zużycie tokenów wg czatu",
+        "tokensByUser": "Zużycie tokenów wg użytkownika",
+        "tokensByGroup": "Zużycie tokenów wg grupy",
+        "columns": {
+          "name": "Nazwa",
+          "user": "Użytkownik",
+          "group": "Grupa",
+          "tokens": "Tokeny"
+        },
+        "noData": "Brak danych.",
+        "anonymous": "Nieznany członek"
+      },
       "links": {
         "chats": {
           "title": "Czaty",

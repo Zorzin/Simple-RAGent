@@ -212,7 +212,10 @@ export async function createChat(formData: FormData) {
     revalidatePath("/admin/chats");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to create chat." };
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to create chat.",
+    };
   }
 }
 
@@ -292,7 +295,10 @@ export async function updateChat(formData: FormData) {
     revalidatePath("/admin/chats");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to update chat." };
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to update chat.",
+    };
   }
 }
 
@@ -339,7 +345,10 @@ export async function createGroup(formData: FormData) {
     revalidatePath("/admin/groups");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to create group." };
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to create group.",
+    };
   }
 }
 
@@ -365,7 +374,10 @@ export async function updateGroup(formData: FormData) {
     revalidatePath("/admin/groups");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to update group." };
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to update group.",
+    };
   }
 }
 
@@ -405,7 +417,10 @@ export async function createConnector(formData: FormData) {
     revalidatePath("/admin/connectors");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to create connector." };
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to create connector.",
+    };
   }
 }
 
@@ -446,7 +461,10 @@ export async function updateConnector(formData: FormData) {
     revalidatePath("/admin/connectors");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to update connector." };
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to update connector.",
+    };
   }
 }
 
@@ -506,7 +524,10 @@ export async function setTokenLimit(formData: FormData) {
     revalidatePath("/admin/limits");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to set token limit." };
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to set token limit.",
+    };
   }
 }
 
@@ -526,7 +547,10 @@ export async function updateTokenLimit(formData: FormData) {
     revalidatePath("/admin/limits");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to update token limit." };
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to update token limit.",
+    };
   }
 }
 
@@ -658,7 +682,10 @@ export async function renameFile(formData: FormData) {
     revalidatePath("/admin/files");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to rename file." };
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to rename file.",
+    };
   }
 }
 
@@ -883,7 +910,10 @@ export async function updateMemberRole(formData: FormData) {
     revalidatePath("/admin/members");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to update member role." };
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to update member role.",
+    };
   }
 }
 

@@ -2,7 +2,13 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createAzure } from "@ai-sdk/azure";
 import { createOpenAI } from "@ai-sdk/openai";
 
-export type ProviderName = "anthropic" | "openai" | "mistral" | "azure_openai" | "copilot" | "custom";
+export type ProviderName =
+  | "anthropic"
+  | "openai"
+  | "mistral"
+  | "azure_openai"
+  | "copilot"
+  | "custom";
 
 const DEFAULT_MODELS: Partial<Record<ProviderName, string>> = {
   anthropic: process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20240620",

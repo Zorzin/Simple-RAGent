@@ -30,7 +30,9 @@ export default async function AppHome() {
       >
         <MessageCircleMore size={28} strokeWidth={1.5} color="#3b82f6" />
       </div>
-      <h1 style={{ marginTop: 16, fontSize: 20, fontWeight: 600, color: "#fafafa" }}>{t("ctaPrimary")}</h1>
+      <h1 style={{ marginTop: 16, fontSize: 20, fontWeight: 600, color: "#fafafa" }}>
+        {t("ctaPrimary")}
+      </h1>
       <p style={{ marginTop: 8, maxWidth: 400, fontSize: 14, color: "#71717a" }}>
         Select a chat from the sidebar to get started, or create a new one.
       </p>

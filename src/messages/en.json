@@ -84,6 +84,31 @@
       "title": "Admin Panel",
       "welcome": "Welcome back, {name}. Select a section to manage your workspace.",
       "fallbackName": "admin",
+      "stats": {
+        "chats": "Total Chats",
+        "members": "Total Members",
+        "totalTokens": "Total Tokens Used",
+        "activeUsers": "Active Users (7d)",
+        "filesTitle": "File Statistics",
+        "fileCount": "Files",
+        "totalSize": "Total Size",
+        "chunkCount": "Chunks",
+        "activityTitle": "Recent Activity",
+        "activeMembers": "Active Members",
+        "activeSessions": "New Sessions",
+        "last7days": "Last 7 days",
+        "tokensByChat": "Token Usage by Chat",
+        "tokensByUser": "Token Usage by User",
+        "tokensByGroup": "Token Usage by Group",
+        "columns": {
+          "name": "Name",
+          "user": "User",
+          "group": "Group",
+          "tokens": "Tokens"
+        },
+        "noData": "No data yet.",
+        "anonymous": "Unknown member"
+      },
       "links": {
         "chats": {
           "title": "Chats",

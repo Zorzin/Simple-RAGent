@@ -43,7 +43,15 @@ const errorCodeTranslationKeys: Record<string, string> = {
   unauthorized: "sendError",
 };
 
-export default function ChatClient({ sessionId, locale, initialMessages, chatName, chatDescription, connectorName, initialSessionTitle }: Props) {
+export default function ChatClient({
+  sessionId,
+  locale,
+  initialMessages,
+  chatName,
+  chatDescription,
+  connectorName,
+  initialSessionTitle,
+}: Props) {
   const t = useTranslations("app.chat");
 
   function parseApiError(raw: string): string | null {
@@ -57,12 +65,14 @@ export default function ChatClient({ sessionId, locale, initialMessages, chatNam
     if (code === "tokenLimit" && typeof json.resetsAt === "string") {
       const resetsAt = new Date(json.resetsAt);
       if (!isNaN(resetsAt.getTime())) {
-        message += " " + t("limitResetsAt", {
-          time: resetsAt.toLocaleString(locale, {
-            dateStyle: "medium",
-            timeStyle: "short",
-          }),
-        });
+        message +=
+          " " +
+          t("limitResetsAt", {
+            time: resetsAt.toLocaleString(locale, {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }),
+          });
       }
     }
 
@@ -142,10 +152,19 @@ export default function ChatClient({ sessionId, locale, initialMessages, chatNam
     }
   }
 
-  const displayError = submitError || (error ? (parseApiError(error.message) || t("sendError")) : null);
+  const displayError =
+    submitError || (error ? parseApiError(error.message) || t("sendError") : null);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", backgroundColor: "#09090b" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        width: "100%",
+        backgroundColor: "#09090b",
+      }}
+    >
       <ChatHeader title={sessionTitle} description={chatDescription} />
 
       <ChatMessageList

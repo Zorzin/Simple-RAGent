@@ -33,7 +33,9 @@ export async function POST(request: Request) {
     (() => {
       // Extract last user message from useChat format
       if (Array.isArray(body.messages)) {
-        const lastUserMsg = [...body.messages].reverse().find((m: { role: string }) => m.role === "user");
+        const lastUserMsg = [...body.messages]
+          .reverse()
+          .find((m: { role: string }) => m.role === "user");
         if (lastUserMsg) {
           // UIMessage format: has parts array
           if (Array.isArray(lastUserMsg.parts)) {
@@ -178,9 +180,7 @@ export async function POST(request: Request) {
     fileIds.length > 0 ? { search_documents: createSearchDocumentsTool(fileIds) } : undefined;
 
   const shouldGenerateTitle =
-    !chatSession.title ||
-    chatSession.title.trim().length === 0 ||
-    chatSession.title === chat.name;
+    !chatSession.title || chatSession.title.trim().length === 0 || chatSession.title === chat.name;
 
   const provider = connector.provider;
   const connectorModel = connector.model;
@@ -233,10 +233,7 @@ export async function POST(request: Request) {
             maxOutputTokens: 1000,
           });
 
-          const cleaned = title
-            .trim()
-            .replace(/^"|"$/g, "")
-            .slice(0, 80);
+          const cleaned = title.trim().replace(/^"|"$/g, "").slice(0, 80);
           if (cleaned) {
             await db
               .update(chatSessions)
@@ -262,7 +259,7 @@ export async function POST(request: Request) {
 
   return result.toUIMessageStreamResponse({
     messageMetadata: ({ part }) => {
-      if (part.type === 'finish') {
+      if (part.type === "finish") {
         return {
           usage: {
             inputTokens: part.totalUsage.inputTokens,

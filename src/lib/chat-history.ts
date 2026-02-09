@@ -103,8 +103,15 @@ export async function summarizeOlderMessages(params: {
   azureApiVersion?: string | null;
   maxTokens?: number;
 }) {
-  const { sessionId, provider, model, apiKey, azureEndpoint, azureApiVersion, maxTokens = 6000 } =
-    params;
+  const {
+    sessionId,
+    provider,
+    model,
+    apiKey,
+    azureEndpoint,
+    azureApiVersion,
+    maxTokens = 6000,
+  } = params;
   const db = getDb();
 
   const [session] = await db

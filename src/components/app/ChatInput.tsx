@@ -12,7 +12,13 @@ interface ChatInputProps {
   connectorName?: string | null;
 }
 
-export default function ChatInput({ value, onChange, onSubmit, isLoading, connectorName }: ChatInputProps) {
+export default function ChatInput({
+  value,
+  onChange,
+  onSubmit,
+  isLoading,
+  connectorName,
+}: ChatInputProps) {
   const t = useTranslations("app.chat");
 
   const canSend = value.trim().length > 0 && !isLoading;
@@ -85,7 +91,15 @@ export default function ChatInput({ value, onChange, onSubmit, isLoading, connec
             </button>
           </div>
         </form>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 4px 0", fontSize: 11 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "8px 4px 0",
+            fontSize: 11,
+          }}
+        >
           {connectorName && (
             <span
               style={{
@@ -99,9 +113,7 @@ export default function ChatInput({ value, onChange, onSubmit, isLoading, connec
               {connectorName}
             </span>
           )}
-          <span style={{ color: "#52525b" }}>
-            {t("inputHelper")}
-          </span>
+          <span style={{ color: "#52525b" }}>{t("inputHelper")}</span>
         </div>
       </div>
     </div>

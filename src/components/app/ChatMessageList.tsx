@@ -45,7 +45,9 @@ function ThinkingIndicator() {
             />
           ))}
         </div>
-        <span style={{ fontSize: 13, color: "#71717a", marginLeft: 4 }}>Generating response...</span>
+        <span style={{ fontSize: 13, color: "#71717a", marginLeft: 4 }}>
+          Generating response...
+        </span>
       </div>
     </div>
   );
@@ -87,9 +89,7 @@ const codeBlockStyle: React.CSSProperties = {
 };
 
 const markdownComponents: Components = {
-  pre: ({ children }) => (
-    <pre style={codeBlockStyle}>{children}</pre>
-  ),
+  pre: ({ children }) => <pre style={codeBlockStyle}>{children}</pre>,
   code: ({ children, className }) => {
     // Inside a <pre>, react-markdown still calls `code` — but the parent
     // <pre> already provides the block styling, so just render raw.
@@ -112,7 +112,12 @@ const markdownComponents: Components = {
     );
   },
   a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", textDecoration: "underline" }}>
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ color: "#60a5fa", textDecoration: "underline" }}
+    >
       {children}
     </a>
   ),
@@ -137,7 +142,14 @@ const markdownComponents: Components = {
     </div>
   ),
   th: ({ children }) => (
-    <th style={{ border: "1px solid #3f3f46", padding: "6px 10px", textAlign: "left", backgroundColor: "#27272a" }}>
+    <th
+      style={{
+        border: "1px solid #3f3f46",
+        padding: "6px 10px",
+        textAlign: "left",
+        backgroundColor: "#27272a",
+      }}
+    >
       {children}
     </th>
   ),
@@ -145,9 +157,15 @@ const markdownComponents: Components = {
     <td style={{ border: "1px solid #3f3f46", padding: "6px 10px" }}>{children}</td>
   ),
   p: ({ children }) => <p style={{ margin: "6px 0" }}>{children}</p>,
-  h1: ({ children }) => <h1 style={{ fontSize: 20, fontWeight: 600, margin: "12px 0 6px" }}>{children}</h1>,
-  h2: ({ children }) => <h2 style={{ fontSize: 18, fontWeight: 600, margin: "10px 0 6px" }}>{children}</h2>,
-  h3: ({ children }) => <h3 style={{ fontSize: 16, fontWeight: 600, margin: "8px 0 4px" }}>{children}</h3>,
+  h1: ({ children }) => (
+    <h1 style={{ fontSize: 20, fontWeight: 600, margin: "12px 0 6px" }}>{children}</h1>
+  ),
+  h2: ({ children }) => (
+    <h2 style={{ fontSize: 18, fontWeight: 600, margin: "10px 0 6px" }}>{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 style={{ fontSize: 16, fontWeight: 600, margin: "8px 0 4px" }}>{children}</h3>
+  ),
 };
 
 /* ---------- Helpers ---------- */
@@ -166,7 +184,16 @@ function closeOpenFences(text: string): string {
 
 function CopyIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </svg>
@@ -175,7 +202,16 @@ function CopyIcon() {
 
 function CheckIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -183,7 +219,16 @@ function CheckIcon() {
 
 function RetryIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="23 4 23 10 17 10" />
       <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
     </svg>
@@ -192,7 +237,15 @@ function RetryIcon() {
 
 /* ---------- Copy Button ---------- */
 
-function CopyButton({ text, label, copiedLabel }: { text: string; label: string; copiedLabel: string }) {
+function CopyButton({
+  text,
+  label,
+  copiedLabel,
+}: {
+  text: string;
+  label: string;
+  copiedLabel: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -229,7 +282,17 @@ function CopyButton({ text, label, copiedLabel }: { text: string; label: string;
 
 /* ---------- Retry Button ---------- */
 
-function RetryButton({ text, onRetry, disabled, label }: { text: string; onRetry: (text: string) => void; disabled?: boolean; label: string }) {
+function RetryButton({
+  text,
+  onRetry,
+  disabled,
+  label,
+}: {
+  text: string;
+  onRetry: (text: string) => void;
+  disabled?: boolean;
+  label: string;
+}) {
   return (
     <button
       onClick={() => onRetry(text)}
@@ -330,7 +393,13 @@ function MessageMeta({
 
 /* ---------- Smooth streaming assistant message ---------- */
 
-function AssistantMessage({ text, isActivelyStreaming }: { text: string; isActivelyStreaming: boolean }) {
+function AssistantMessage({
+  text,
+  isActivelyStreaming,
+}: {
+  text: string;
+  isActivelyStreaming: boolean;
+}) {
   const targetRef = useRef(text);
   const revealedRef = useRef(isActivelyStreaming ? "" : text);
   const [revealed, setRevealed] = useState(isActivelyStreaming ? "" : text);
@@ -367,7 +436,15 @@ function AssistantMessage({ text, isActivelyStreaming }: { text: string; isActiv
 
   return (
     <div style={{ display: "flex", justifyContent: "flex-start" }}>
-      <div style={{ maxWidth: "85%", wordBreak: "break-word", fontSize: 14, lineHeight: 1.7, color: "#d4d4d8" }}>
+      <div
+        style={{
+          maxWidth: "85%",
+          wordBreak: "break-word",
+          fontSize: 14,
+          lineHeight: 1.7,
+          color: "#d4d4d8",
+        }}
+      >
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
           {displayText}
         </ReactMarkdown>
@@ -378,7 +455,17 @@ function AssistantMessage({ text, isActivelyStreaming }: { text: string; isActiv
 
 /* ---------- Main component ---------- */
 
-export default function ChatMessageList({ messages, emptyText, emptyResponseText, isStreaming, isSubmitted, error, locale, onRetry, isLoading: isLoadingProp }: ChatMessageListProps) {
+export default function ChatMessageList({
+  messages,
+  emptyText,
+  emptyResponseText,
+  isStreaming,
+  isSubmitted,
+  error,
+  locale,
+  onRetry,
+  isLoading: isLoadingProp,
+}: ChatMessageListProps) {
   const lastUserMsgRef = useRef<HTMLDivElement | null>(null);
   const prevMsgCountRef = useRef(messages.length);
 
@@ -430,9 +517,27 @@ export default function ChatMessageList({ messages, emptyText, emptyResponseText
         }
       `}</style>
       <div style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px 32px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <div
+          style={{
+            maxWidth: 720,
+            margin: "0 auto",
+            padding: "24px 24px 32px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 20,
+          }}
+        >
           {messages.length === 0 && !showThinking && !error ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "64px 0", fontSize: 14, color: "#71717a" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "64px 0",
+                fontSize: 14,
+                color: "#71717a",
+              }}
+            >
               {emptyText}
             </div>
           ) : (
@@ -447,7 +552,11 @@ export default function ChatMessageList({ messages, emptyText, emptyResponseText
               const isMessageStreaming = isLastAssistant && !!isStreaming;
 
               return (
-                <div key={m.id} ref={isLastUser ? lastUserMsgRef : undefined} style={isLastUser ? { scrollMarginTop: 24 } : undefined}>
+                <div
+                  key={m.id}
+                  ref={isLastUser ? lastUserMsgRef : undefined}
+                  style={isLastUser ? { scrollMarginTop: 24 } : undefined}
+                >
                   {isUser ? (
                     <div style={{ display: "flex", justifyContent: "flex-end" }}>
                       <div
@@ -458,7 +567,16 @@ export default function ChatMessageList({ messages, emptyText, emptyResponseText
                           padding: "10px 16px",
                         }}
                       >
-                        <p style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 14, lineHeight: 1.6, color: "#fafafa" }}>
+                        <p
+                          style={{
+                            margin: 0,
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-word",
+                            fontSize: 14,
+                            lineHeight: 1.6,
+                            color: "#fafafa",
+                          }}
+                        >
                           {text}
                         </p>
                       </div>
@@ -486,10 +604,11 @@ export default function ChatMessageList({ messages, emptyText, emptyResponseText
           {error && <ErrorIndicator message={error} />}
 
           {/* Show error when streaming finished but assistant produced no text */}
-          {!isLoading && !error && messages.length > 0 &&
-            lastMsg?.role === "assistant" && !aiHasContent && (
-              <ErrorIndicator message={emptyResponseText} />
-          )}
+          {!isLoading &&
+            !error &&
+            messages.length > 0 &&
+            lastMsg?.role === "assistant" &&
+            !aiHasContent && <ErrorIndicator message={emptyResponseText} />}
 
           {/* Spacer so the last user message can always be scrolled to the top */}
           <div style={{ minHeight: "60vh", flexShrink: 0 }} />

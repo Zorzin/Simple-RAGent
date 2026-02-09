@@ -59,9 +59,7 @@ export default function EditMemberForm({
   return (
     <Card className="space-y-4 p-6">
       <div>
-        <div className="text-sm font-medium text-zinc-900">
-          {identifier || t("anonymous")}
-        </div>
+        <div className="text-sm font-medium text-zinc-900">{identifier || t("anonymous")}</div>
         <div className="text-xs text-zinc-500">{userId}</div>
       </div>
       <form action={formAction} className="space-y-3" onSubmit={() => setDismissed(false)}>
