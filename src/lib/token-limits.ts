@@ -32,6 +32,24 @@ function startOfInterval(date: Date, interval: TokenInterval) {
   return new Date(Date.UTC(utcYear, utcMonth, 1));
 }
 
+export function nextIntervalStart(date: Date, interval: TokenInterval): Date {
+  const utcYear = date.getUTCFullYear();
+  const utcMonth = date.getUTCMonth();
+  const utcDate = date.getUTCDate();
+
+  if (interval === "day") {
+    return new Date(Date.UTC(utcYear, utcMonth, utcDate + 1));
+  }
+
+  if (interval === "week") {
+    const day = date.getUTCDay();
+    const daysUntilMonday = (8 - day) % 7 || 7;
+    return new Date(Date.UTC(utcYear, utcMonth, utcDate + daysUntilMonday));
+  }
+
+  return new Date(Date.UTC(utcYear, utcMonth + 1, 1));
+}
+
 export async function getTokenLimitStatus(params: {
   organizationId: string;
   memberId: string;

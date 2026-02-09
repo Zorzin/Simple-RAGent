@@ -23,7 +23,14 @@
       "roleAssistant": "Asystent",
       "fallbackWithContext": "Znalazłem istotny kontekst:\n\n{context}\n\nPodłącz model, aby uzyskać pełną odpowiedź.",
       "fallbackNoModel": "Nie podłączono żadnego modelu. Podłącz model, aby odpowiedzieć.",
-      "unsupportedProvider": "Podłączony dostawca nie obsługuje jeszcze streamingu."
+      "unsupportedProvider": "Podłączony dostawca nie obsługuje jeszcze streamingu.",
+      "emptyResponse": "Nie otrzymano odpowiedzi. Spróbuj ponownie.",
+      "tokenLimitExceeded": "Limit tokenów dla tego czatu jest zbyt niski, aby wygenerować odpowiedź. Poproś administratora o jego zwiększenie.",
+      "limitResetsAt": "Limit odnowi się {time}.",
+      "tokenUsage": "in: {input} · out: {output} tokenów",
+      "copied": "Skopiowano!",
+      "copy": "Kopiuj",
+      "retry": "Ponów"
     },
     "sidebar": {
       "workspace": "Workspace",
@@ -53,7 +60,7 @@
     },
     "prompts": {
       "system": "Jesteś firmowym asystentem. Odpowiadaj na pytania jasno i zwięźle. Jeśli nie jesteś pewien, powiedz o tym.",
-      "systemWithFiles": "Jesteś firmowym asystentem z dostępem do wgranych dokumentów firmowych. Używaj narzędzia search_documents, aby wyszukiwać istotne informacje, gdy użytkownik pyta o konkretne tematy, polityki lub treści plików. Odpowiadaj jasno i zwięźle. Jeśli nie możesz znaleźć odpowiedzi w dokumentach, powiedz o tym.",
+      "systemWithFiles": "Jesteś firmowym asystentem z dostępem do wgranych dokumentów firmowych. Używaj narzędzia search_documents, aby wyszukiwać istotne informacje, gdy użytkownik pyta o konkretne tematy, polityki lub treści plików. Odpowiadaj jasno i zwięźle. Jeśli nie możesz znaleźć odpowiedzi w dokumentach, powiedz o tym. WAŻNE: Po użyciu narzędzia MUSISZ zawsze udzielić użytkownikowi odpowiedzi tekstowej na podstawie wyników.",
       "titlePrompt": "Utwórz krótki, opisowy tytuł rozmowy (3–6 słów). Zwróć wyłącznie tytuł.\n\nUżytkownik: {user}\nAsystent: {assistant}",
       "titleSystem": "Jesteś pomocnym asystentem, który tworzy zwięzłe tytuły rozmów."
     }

@@ -1,17 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type { UIMessage } from "@ai-sdk/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
+import { useTranslations } from "next-intl";
 
 interface ChatMessageListProps {
   messages: UIMessage[];
   emptyText: string;
+  emptyResponseText: string;
   isStreaming?: boolean;
   isSubmitted?: boolean;
   error?: string | null;
+  locale?: string;
+  onRetry?: (text: string) => void;
+  isLoading?: boolean;
 }
 
 function getMessageText(message: UIMessage): string {
@@ -157,6 +162,172 @@ function closeOpenFences(text: string): string {
   return text;
 }
 
+/* ---------- SVG Icons ---------- */
+
+function CopyIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function RetryIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 4 23 10 17 10" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  );
+}
+
+/* ---------- Copy Button ---------- */
+
+function CopyButton({ text, label, copiedLabel }: { text: string; label: string; copiedLabel: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard API not available
+    }
+  }, [text]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      title={copied ? copiedLabel : label}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        color: copied ? "#4ade80" : "#52525b",
+        padding: 2,
+        borderRadius: 4,
+        transition: "color 0.15s",
+      }}
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
+    </button>
+  );
+}
+
+/* ---------- Retry Button ---------- */
+
+function RetryButton({ text, onRetry, disabled, label }: { text: string; onRetry: (text: string) => void; disabled?: boolean; label: string }) {
+  return (
+    <button
+      onClick={() => onRetry(text)}
+      disabled={disabled}
+      title={label}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        background: "none",
+        border: "none",
+        cursor: disabled ? "not-allowed" : "pointer",
+        color: "#52525b",
+        padding: 2,
+        borderRadius: 4,
+        opacity: disabled ? 0.4 : 1,
+        transition: "color 0.15s",
+      }}
+    >
+      <RetryIcon />
+    </button>
+  );
+}
+
+/* ---------- Timestamp helper ---------- */
+
+function formatTimestamp(date: Date | undefined, locale?: string): string {
+  if (!date) return "";
+  return date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+}
+
+/* ---------- Message Metadata Row ---------- */
+
+function MessageMeta({
+  message,
+  text,
+  isUser,
+  locale,
+  onRetry,
+  isLoading,
+}: {
+  message: UIMessage;
+  text: string;
+  isUser: boolean;
+  locale?: string;
+  onRetry?: (text: string) => void;
+  isLoading?: boolean;
+}) {
+  const t = useTranslations("app.chat");
+  const msgAny = message as UIMessage & { createdAt?: Date | string };
+  const timestamp = msgAny.createdAt ? formatTimestamp(new Date(msgAny.createdAt), locale) : "";
+  const metadata = message.metadata as
+    | { usage?: { inputTokens?: number; outputTokens?: number } }
+    | undefined;
+  const usage = metadata?.usage;
+
+  const metaStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+    fontSize: 11,
+    color: "#52525b",
+    justifyContent: isUser ? "flex-end" : "flex-start",
+  };
+
+  if (isUser) {
+    return (
+      <div style={metaStyle}>
+        {timestamp && <span>{timestamp}</span>}
+        <CopyButton text={text} label={t("copy")} copiedLabel={t("copied")} />
+        {onRetry && (
+          <RetryButton text={text} onRetry={onRetry} disabled={isLoading} label={t("retry")} />
+        )}
+      </div>
+    );
+  }
+
+  // Assistant message
+  return (
+    <div style={metaStyle}>
+      {timestamp && <span>{timestamp}</span>}
+      {usage && (
+        <>
+          {timestamp && <span>·</span>}
+          <span style={{ fontStyle: "italic" }}>
+            {t("tokenUsage", {
+              input: usage.inputTokens?.toLocaleString(locale) ?? "?",
+              output: usage.outputTokens?.toLocaleString(locale) ?? "?",
+            })}
+          </span>
+        </>
+      )}
+      <CopyButton text={text} label={t("copy")} copiedLabel={t("copied")} />
+    </div>
+  );
+}
+
 /* ---------- Smooth streaming assistant message ---------- */
 
 function AssistantMessage({ text, isActivelyStreaming }: { text: string; isActivelyStreaming: boolean }) {
@@ -207,7 +378,7 @@ function AssistantMessage({ text, isActivelyStreaming }: { text: string; isActiv
 
 /* ---------- Main component ---------- */
 
-export default function ChatMessageList({ messages, emptyText, isStreaming, isSubmitted, error }: ChatMessageListProps) {
+export default function ChatMessageList({ messages, emptyText, emptyResponseText, isStreaming, isSubmitted, error, locale, onRetry, isLoading: isLoadingProp }: ChatMessageListProps) {
   const lastUserMsgRef = useRef<HTMLDivElement | null>(null);
   const prevMsgCountRef = useRef(messages.length);
 
@@ -295,6 +466,16 @@ export default function ChatMessageList({ messages, emptyText, isStreaming, isSu
                   ) : (
                     <AssistantMessage text={text} isActivelyStreaming={isMessageStreaming} />
                   )}
+                  {!isMessageStreaming && (
+                    <MessageMeta
+                      message={m}
+                      text={text}
+                      isUser={isUser}
+                      locale={locale}
+                      onRetry={onRetry}
+                      isLoading={isLoadingProp}
+                    />
+                  )}
                 </div>
               );
             })
@@ -303,6 +484,12 @@ export default function ChatMessageList({ messages, emptyText, isStreaming, isSu
           {showThinking && <ThinkingIndicator />}
 
           {error && <ErrorIndicator message={error} />}
+
+          {/* Show error when streaming finished but assistant produced no text */}
+          {!isLoading && !error && messages.length > 0 &&
+            lastMsg?.role === "assistant" && !aiHasContent && (
+              <ErrorIndicator message={emptyResponseText} />
+          )}
 
           {/* Spacer so the last user message can always be scrolled to the top */}
           <div style={{ minHeight: "60vh", flexShrink: 0 }} />

@@ -14,6 +14,7 @@ export type ChatMessage = {
   id: string;
   role: string;
   content: string;
+  createdAt?: string;
 };
 
 type Props = {
@@ -26,8 +27,47 @@ type Props = {
   initialSessionTitle?: string | null;
 };
 
+function parseApiJson(raw: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") return parsed as Record<string, unknown>;
+  } catch {
+    // not JSON
+  }
+  return null;
+}
+
+const errorCodeTranslationKeys: Record<string, string> = {
+  tokenLimit: "tokenLimitExceeded",
+  missingApiKey: "fallbackNoModel",
+  unauthorized: "sendError",
+};
+
 export default function ChatClient({ sessionId, locale, initialMessages, chatName, chatDescription, connectorName, initialSessionTitle }: Props) {
   const t = useTranslations("app.chat");
+
+  function parseApiError(raw: string): string | null {
+    const json = parseApiJson(raw);
+    if (!json) return null;
+    const code = typeof json.errorCode === "string" ? json.errorCode : null;
+    if (!code || !errorCodeTranslationKeys[code]) return null;
+
+    let message = t(errorCodeTranslationKeys[code]);
+
+    if (code === "tokenLimit" && typeof json.resetsAt === "string") {
+      const resetsAt = new Date(json.resetsAt);
+      if (!isNaN(resetsAt.getTime())) {
+        message += " " + t("limitResetsAt", {
+          time: resetsAt.toLocaleString(locale, {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }),
+        });
+      }
+    }
+
+    return message;
+  }
   const [input, setInput] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [sessionTitle, setSessionTitle] = useState(initialSessionTitle || chatName);
@@ -49,15 +89,22 @@ export default function ChatClient({ sessionId, locale, initialMessages, chatNam
         id: m.id,
         role: m.role as UIMessage["role"],
         parts: [{ type: "text", text: m.content }],
+        ...(m.createdAt ? { createdAt: new Date(m.createdAt) } : {}),
       }),
     ),
     onError: (err) => {
-      console.error("[chat] useChat error:", err);
-      setSubmitError(err.message || t("sendError"));
+      setSubmitError(parseApiError(err.message) || t("sendError"));
     },
     onFinish: async () => {
       setSubmitError(null);
-      const title = await getSessionTitle(sessionId);
+      // Server generates the title asynchronously after the stream ends,
+      // so we need to retry with a delay to wait for it.
+      let title: string | null = null;
+      for (let i = 0; i < 3; i++) {
+        await new Promise((r) => setTimeout(r, 1500));
+        title = await getSessionTitle(sessionId);
+        if (title) break;
+      }
       if (title) setSessionTitle(title);
       if (typeof window !== "undefined") {
         window.dispatchEvent(
@@ -79,12 +126,23 @@ export default function ChatClient({ sessionId, locale, initialMessages, chatNam
     try {
       await sendMessage({ text: trimmed });
     } catch (err) {
-      console.error("[chat] sendMessage error:", err);
-      setSubmitError(err instanceof Error ? err.message : t("sendError"));
+      const raw = err instanceof Error ? err.message : "";
+      setSubmitError(parseApiError(raw) || t("sendError"));
     }
   }
 
-  const displayError = submitError || (error ? (error.message || t("sendError")) : null);
+  async function handleRetry(text: string) {
+    if (isLoading) return;
+    setSubmitError(null);
+    try {
+      await sendMessage({ text });
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : "";
+      setSubmitError(parseApiError(raw) || t("sendError"));
+    }
+  }
+
+  const displayError = submitError || (error ? (parseApiError(error.message) || t("sendError")) : null);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", backgroundColor: "#09090b" }}>
@@ -93,9 +151,13 @@ export default function ChatClient({ sessionId, locale, initialMessages, chatNam
       <ChatMessageList
         messages={messages}
         emptyText={t("empty")}
+        emptyResponseText={t("emptyResponse")}
         isStreaming={status === "streaming"}
         isSubmitted={status === "submitted"}
         error={displayError}
+        locale={locale}
+        onRetry={handleRetry}
+        isLoading={isLoading}
       />
 
       <ChatInput

@@ -23,7 +23,14 @@
       "roleAssistant": "Assistant",
       "fallbackWithContext": "I found relevant context:\n\n{context}\n\nConnect a model to get a full answer.",
       "fallbackNoModel": "No model connected yet. Connect a model to reply.",
-      "unsupportedProvider": "Connected provider is not supported for streaming yet."
+      "unsupportedProvider": "Connected provider is not supported for streaming yet.",
+      "emptyResponse": "No response received. Please try again.",
+      "tokenLimitExceeded": "The token limit for this chat is too low to generate a response. Please ask an administrator to increase it.",
+      "limitResetsAt": "The limit resets at {time}.",
+      "tokenUsage": "in: {input} · out: {output} tokens",
+      "copied": "Copied!",
+      "copy": "Copy",
+      "retry": "Retry"
     },
     "sidebar": {
       "workspace": "Workspace",
@@ -53,7 +60,7 @@
     },
     "prompts": {
       "system": "You are a company assistant. Answer questions clearly and concisely. If you are unsure, say so.",
-      "systemWithFiles": "You are a company assistant with access to uploaded company documents. Use the search_documents tool to look up relevant information when the user asks about specific topics, policies, or file contents. Answer clearly and concisely. If you cannot find the answer in the documents, say so.",
+      "systemWithFiles": "You are a company assistant with access to uploaded company documents. Use the search_documents tool to look up relevant information when the user asks about specific topics, policies, or file contents. Answer clearly and concisely. If you cannot find the answer in the documents, say so. IMPORTANT: After using a tool, you MUST always provide a text response to the user based on the results.",
       "titlePrompt": "Create a short, descriptive chat title (3-6 words). Return only the title.\n\nUser: {user}\nAssistant: {assistant}",
       "titleSystem": "You are a helpful assistant that writes concise chat titles."
     }

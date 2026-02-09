@@ -8,7 +8,7 @@ import { chatFiles, chatLlmConnectors, chatSessions, chats, llmConnectors } from
 import { auth } from "@/lib/auth";
 import { estimateTokens } from "@/lib/embeddings";
 import { getOrCreateMember } from "@/lib/organization";
-import { getTokenLimitStatus } from "@/lib/token-limits";
+import { getTokenLimitStatus, nextIntervalStart } from "@/lib/token-limits";
 import { safeInsertMessage } from "@/lib/messages";
 import { getLanguageModel, resolveApiKey, type ProviderName } from "@/lib/ai-provider";
 import { generateResponse } from "@/lib/llm";
@@ -131,8 +131,12 @@ export async function POST(request: Request) {
   });
 
   if (limitStatus.blocked) {
+    const blockedLimit = limitStatus.items.find((item) => item.wouldExceed);
+    const resetsAt = blockedLimit
+      ? nextIntervalStart(new Date(), blockedLimit.interval).toISOString()
+      : undefined;
     return NextResponse.json(
-      { errorCode: "tokenLimit", limits: limitStatus.items },
+      { errorCode: "tokenLimit", resetsAt, limits: limitStatus.items },
       { status: 429 },
     );
   }
@@ -194,10 +198,12 @@ export async function POST(request: Request) {
     system: systemPrompt,
     messages: [...history, { role: "user" as const, content: userContent }],
     tools,
-    stopWhen: stepCountIs(3),
+    stopWhen: stepCountIs(5),
     maxOutputTokens,
     onFinish: async ({ text }) => {
-      console.log("[chat/stream] LLM response:", text);
+      if (!text || text.trim().length === 0) {
+        return;
+      }
 
       // Save assistant message
       await safeInsertMessage({
@@ -224,7 +230,7 @@ export async function POST(request: Request) {
             azureApiVersion: connectorAzureApiVersion,
             system: tPrompts("titleSystem"),
             user: titlePrompt,
-            maxOutputTokens: 20,
+            maxOutputTokens: 1000,
           });
 
           const cleaned = title
@@ -238,7 +244,7 @@ export async function POST(request: Request) {
               .where(eq(chatSessions.id, chatSession.id));
           }
         } catch {
-          // Ignore title generation errors
+          // title generation is best-effort
         }
       }
 
@@ -254,5 +260,17 @@ export async function POST(request: Request) {
     },
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    messageMetadata: ({ part }) => {
+      if (part.type === 'finish') {
+        return {
+          usage: {
+            inputTokens: part.totalUsage.inputTokens,
+            outputTokens: part.totalUsage.outputTokens,
+          },
+        };
+      }
+      return undefined;
+    },
+  });
 }

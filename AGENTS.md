@@ -87,3 +87,5 @@ pnpm db:migrate
   - `pnpm lint`
   - `pnpm format`
 - If either command fails, fix issues before finishing.
+- Do not remove any feature or part of the feature without asking first.
+- If some part of the app is not working correctly, then we should always try to fix that, not remove it.

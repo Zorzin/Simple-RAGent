@@ -64,6 +64,7 @@ export default async function ChatSessionPage({ params }: Props) {
         id: message.id,
         role: message.role,
         content: message.content,
+        createdAt: message.createdAt.toISOString(),
       }))}
     />
   );
